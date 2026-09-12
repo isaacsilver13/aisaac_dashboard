@@ -10,6 +10,7 @@ primary_region = "ewr"
   initial_size = "1gb"
 
 [env]
+  PROFILE = "production"
   INCIDENTS_DB_PATH = "/data/aisaac_incidents.db"
 
 [http_service]
