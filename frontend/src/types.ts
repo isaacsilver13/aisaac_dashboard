@@ -1,4 +1,4 @@
-export type HealthState = "up" | "degraded" | "down" | "unavailable";
+export type HealthState = "up" | "degraded" | "down" | "unavailable" | "stale";
 
 export interface CheckResult {
   app_id: string;
@@ -24,4 +24,13 @@ export interface DashboardResponse {
   profile: "local" | "production";
   refreshed_at: string;
   results: CheckResult[];
+}
+
+export interface Incident {
+  id: number;
+  app_id: string;
+  failure_type: string;
+  started_at: string;
+  resolved_at: string | null;
+  notes: string | null;
 }

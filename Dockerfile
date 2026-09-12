@@ -12,6 +12,8 @@ RUN pip install --no-cache-dir fastapi httpx pydantic-settings "uvicorn[standard
 COPY backend/app ./app
 COPY backend/tests ./tests
 COPY --from=frontend /app/frontend/dist /app/frontend/dist
+COPY runbooks /app/runbooks
 ENV FRONTEND_DIST=/app/frontend/dist
+ENV RUNBOOKS_DIR=/app/runbooks
 EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

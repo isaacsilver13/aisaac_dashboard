@@ -1,4 +1,4 @@
-import { CircleCheck, CircleDashed, CircleX, TriangleAlert } from "lucide-react";
+import { CircleCheck, CircleDashed, CircleX, Clock9, TriangleAlert } from "lucide-react";
 
 import type { HealthState } from "../types";
 
@@ -7,6 +7,7 @@ const statusConfig: Record<HealthState, { label: string; className: string; Icon
   degraded: { label: "Degraded", className: "status-degraded", Icon: TriangleAlert },
   down: { label: "Down", className: "status-down", Icon: CircleX },
   unavailable: { label: "Not configured", className: "status-unavailable", Icon: CircleDashed },
+  stale: { label: "No recent heartbeat", className: "status-stale", Icon: Clock9 },
 };
 
 interface StatusBadgeProps {

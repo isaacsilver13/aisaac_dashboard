@@ -5,9 +5,9 @@ from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
-HealthState = Literal["up", "degraded", "down", "unavailable"]
+HealthState = Literal["up", "degraded", "down", "unavailable", "stale"]
 CheckKind = Literal["json", "page"]
-MonitorTarget = Literal["health", "page"]
+MonitorTarget = Literal["health", "page", "push"]
 
 
 class AppDefinition(BaseModel):
@@ -52,3 +52,24 @@ class DashboardResponse(BaseModel):
     profile: str
     refreshed_at: datetime
     results: list[CheckResult]
+
+
+class PushReportIn(BaseModel):
+    app_id: str = Field(pattern=r"^[a-z0-9-]+$")
+    status: str = "ok"
+    metrics: dict[str, Any] = Field(default_factory=dict)
+
+
+class IncidentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    app_id: str
+    failure_type: str
+    started_at: str
+    resolved_at: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class ResolveIncidentIn(BaseModel):
+    notes: Optional[str] = None

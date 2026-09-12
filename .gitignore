@@ -9,3 +9,6 @@ dist/
 coverage/
 *.egg-info/
 *.tsbuildinfo
+*.db
+*.db-shm
+*.db-wal

@@ -7,13 +7,17 @@ from typing import Any
 
 import httpx
 
+from . import alerts, incidents, reports
+from .config import Settings
 from .schemas import AppDefinition, CheckResult, HealthState
 
 
 class Monitor:
-    def __init__(self, cache_ttl_seconds: float = 20.0) -> None:
+    def __init__(self, cache_ttl_seconds: float = 20.0, settings: Settings | None = None) -> None:
         self.cache_ttl_seconds = cache_ttl_seconds
+        self.settings = settings
         self._cache: tuple[float, list[CheckResult]] | None = None
+        self._last_state: dict[str, HealthState] = {}
 
     async def dashboard(
         self, apps: tuple[AppDefinition, ...], force_refresh: bool = False
@@ -25,12 +29,38 @@ class Monitor:
         async with httpx.AsyncClient(follow_redirects=True) as client:
             results = list(await asyncio.gather(*(self.check_app(client, app) for app in apps)))
         self._cache = (time.monotonic(), results)
+        for result in results:
+            self._handle_transition(result)
         return results
+
+    def _handle_transition(self, result: CheckResult) -> None:
+        previous = self._last_state.get(result.app_id)
+        current = result.state
+        self._last_state[result.app_id] = current
+        if previous is None or previous == current:
+            return
+
+        was_failing = previous in ("down", "degraded")
+        is_failing = current in ("down", "degraded")
+        if is_failing and not was_failing:
+            if incidents.get_open_incident(result.app_id) is None:
+                incidents.open_incident(result.app_id, failure_type=current)
+        elif was_failing and not is_failing:
+            open_incident = incidents.get_open_incident(result.app_id)
+            if open_incident is not None:
+                incidents.resolve_incident(
+                    open_incident["id"], notes="Auto-resolved: check recovered."
+                )
+
+        if self.settings is not None:
+            alerts.send_transition_alert(self.settings, result.name, previous, current)
 
     async def check_app(self, client: httpx.AsyncClient, app: AppDefinition) -> CheckResult:
         checked_at = datetime.now(timezone.utc)
         if not app.enabled:
             return self._unavailable(app, checked_at, "Not configured for this environment.")
+        if app.monitor_target == "push":
+            return self._check_pushed_report(app, checked_at)
         if app.monitor_target == "page":
             return await self._check_page(client, app, checked_at)
         if app.health_url is None:
@@ -105,6 +135,32 @@ class Monitor:
             metrics_state=metrics_state,
             metrics=metrics,
             detail=detail,
+        )
+
+    def _check_pushed_report(self, app: AppDefinition, checked_at: datetime) -> CheckResult:
+        stale_after = self.settings.stale_report_after_hours if self.settings else 26.0
+        report = reports.get_report(app.id, stale_after_hours=stale_after)
+        if report is None:
+            return CheckResult(
+                app_id=app.id,
+                name=app.name,
+                category=app.category,
+                description=app.description,
+                product_url=app.product_url,
+                state="stale",
+                checked_at=checked_at,
+                detail="No recent heartbeat received.",
+            )
+        state = self._state_from_payload({"status": report.status})
+        return CheckResult(
+            app_id=app.id,
+            name=app.name,
+            category=app.category,
+            description=app.description,
+            product_url=app.product_url,
+            state=state,
+            checked_at=report.received_at,
+            metrics=self._metrics_from_payload(report.metrics, app.metric_allowlist),
         )
 
     async def _check_page(

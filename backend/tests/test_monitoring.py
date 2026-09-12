@@ -1,5 +1,8 @@
+import asyncio
+
 import httpx
 
+from app import incidents, reports
 from app.monitoring import Monitor
 from app.schemas import AppDefinition
 
@@ -213,3 +216,96 @@ def test_dashboard_uses_ttl_cache() -> None:
     assert first[0].cached is False
     assert second[0].cached is True
     assert second[0].state == "unavailable"
+
+
+def test_push_target_reports_stale_without_a_heartbeat() -> None:
+    app = AppDefinition(
+        id="never-reported",
+        name="Never Reported",
+        category="Test",
+        description="Fixture service",
+        monitor_target="push",
+    )
+
+    transport = httpx.MockTransport(lambda r: httpx.Response(200))
+
+    async def run_check() -> object:
+        async with httpx.AsyncClient(transport=transport) as client:
+            return await Monitor().check_app(client, app)
+
+    result = asyncio.run(run_check())
+
+    assert result.state == "stale"
+
+
+def test_push_target_reflects_recent_heartbeat() -> None:
+    reports.record_report("pushed-app", "ok", {"last_run_score": 1.0})
+    app = AppDefinition(
+        id="pushed-app",
+        name="Pushed App",
+        category="Test",
+        description="Fixture service",
+        monitor_target="push",
+        metric_allowlist=("last_run_score",),
+    )
+
+    transport = httpx.MockTransport(lambda r: httpx.Response(200))
+
+    async def run_check() -> object:
+        async with httpx.AsyncClient(transport=transport) as client:
+            return await Monitor().check_app(client, app)
+
+    result = asyncio.run(run_check())
+
+    assert result.state == "up"
+    assert result.metrics == {"last_run_score": 1.0}
+
+
+def test_dashboard_opens_incident_on_transition_to_down(tmp_path) -> None:
+    incidents.configure(str(tmp_path / "incidents.db"))
+    app = AppDefinition(
+        id="flaky",
+        name="Flaky",
+        category="Test",
+        description="Fixture service",
+        health_url="https://health.example.com",
+    )
+    responses = iter([httpx.Response(200, json={"status": "ok"}), httpx.Response(503)])
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        return next(responses)
+
+    monitor = Monitor(cache_ttl_seconds=0)
+
+    async def run_dashboard() -> None:
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            monitor._handle_transition(await monitor.check_app(client, app))
+            monitor._handle_transition(await monitor.check_app(client, app))
+
+    asyncio.run(run_dashboard())
+
+    assert incidents.get_open_incident("flaky") is not None
+
+
+def test_dashboard_resolves_incident_on_recovery(tmp_path) -> None:
+    incidents.configure(str(tmp_path / "incidents.db"))
+    incidents.open_incident("recovering", failure_type="down")
+    monitor = Monitor()
+    monitor._last_state["recovering"] = "down"
+
+    from datetime import datetime, timezone
+
+    from app.schemas import CheckResult
+
+    result = CheckResult(
+        app_id="recovering",
+        name="Recovering",
+        category="Test",
+        description="Fixture",
+        state="up",
+        checked_at=datetime.now(timezone.utc),
+    )
+
+    monitor._handle_transition(result)
+
+    assert incidents.get_open_incident("recovering") is None

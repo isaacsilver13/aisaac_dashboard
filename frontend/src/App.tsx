@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { Activity, ArrowDownRight, RefreshCw, Server, WifiOff } from "lucide-react";
 
-import { fetchDashboard } from "./api";
+import { fetchDashboard, fetchIncidents } from "./api";
 import { AppCard } from "./components/AppCard";
 import { GlassCard } from "./components/GlassCard";
-import type { DashboardResponse, HealthState } from "./types";
+import type { DashboardResponse, HealthState, Incident } from "./types";
 
-const stateOrder: HealthState[] = ["up", "degraded", "down", "unavailable"];
+const stateOrder: HealthState[] = ["down", "degraded", "stale", "up", "unavailable"];
 
 function formatRefreshTime(value: string): string {
   return new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit", second: "2-digit" }).format(
@@ -26,22 +26,40 @@ function countByState(results: DashboardResponse["results"], state: HealthState)
 
 export default function App() {
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
+  const [incidents, setIncidents] = useState<Incident[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadDashboard = useCallback(async (forceRefresh = false) => {
-    setError(null);
-    if (forceRefresh) setRefreshing(true);
+  const loadIncidents = useCallback(async () => {
     try {
-      setDashboard(await fetchDashboard(forceRefresh));
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Unable to reach the dashboard service.");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+      setIncidents(await fetchIncidents());
+    } catch {
+      // Incident history is a bonus panel; a failure here shouldn't block
+      // the core health dashboard from rendering.
     }
   }, []);
+
+  const loadDashboard = useCallback(
+    async (forceRefresh = false) => {
+      setError(null);
+      if (forceRefresh) setRefreshing(true);
+      try {
+        setDashboard(await fetchDashboard(forceRefresh));
+        await loadIncidents();
+      } catch (requestError) {
+        setError(requestError instanceof Error ? requestError.message : "Unable to reach the dashboard service.");
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [loadIncidents],
+  );
+
+  const openIncidentsByApp = new Map(
+    incidents.filter((incident) => incident.resolved_at === null).map((incident) => [incident.app_id, incident]),
+  );
 
   useEffect(() => {
     const timer = window.setTimeout(() => void loadDashboard(), 0);
@@ -124,7 +142,13 @@ export default function App() {
               </div>
             </GlassCard>
             {stateOrder.flatMap((state) => results.filter((result) => result.state === state)).map((result, index) => (
-              <AppCard key={result.app_id} result={result} index={index} />
+              <AppCard
+                key={result.app_id}
+                result={result}
+                index={index}
+                openIncident={openIncidentsByApp.get(result.app_id)}
+                onIncidentResolved={() => void loadIncidents()}
+              />
             ))}
             <GlassCard className="activity-card">
               <div className="tile-kicker">Recent activity</div>

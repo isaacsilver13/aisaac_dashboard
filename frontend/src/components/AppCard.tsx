@@ -1,12 +1,16 @@
-import { ArrowUpRight, Clock3, Gauge, Radio, ShieldCheck } from "lucide-react";
+import { useState } from "react";
+import { ArrowUpRight, BookOpen, CheckCheck, Clock3, Gauge, Radio, ShieldCheck } from "lucide-react";
 
-import type { CheckResult } from "../types";
+import { fetchRunbook, resolveIncident } from "../api";
+import type { CheckResult, Incident } from "../types";
 import { GlassCard } from "./GlassCard";
 import { StatusBadge } from "./StatusBadge";
 
 interface AppCardProps {
   result: CheckResult;
   index: number;
+  openIncident?: Incident;
+  onIncidentResolved?: () => void;
 }
 
 function formatCheckedAt(value: string): string {
@@ -20,8 +24,30 @@ function formatMetric(value: string | number | boolean): string {
   return String(value);
 }
 
-export function AppCard({ result, index }: AppCardProps) {
+export function AppCard({ result, index, openIncident, onIncidentResolved }: AppCardProps) {
   const metricEntries = Object.entries(result.metrics).slice(0, 3);
+  const [runbook, setRunbook] = useState<string | null | undefined>(undefined);
+  const [resolving, setResolving] = useState(false);
+
+  async function handleViewRunbook() {
+    if (runbook !== undefined) {
+      setRunbook(undefined);
+      return;
+    }
+    setRunbook(await fetchRunbook(result.app_id));
+  }
+
+  async function handleResolve() {
+    if (!openIncident) return;
+    setResolving(true);
+    try {
+      await resolveIncident(openIncident.id, "Resolved from AIsaac dashboard.");
+      onIncidentResolved?.();
+    } finally {
+      setResolving(false);
+    }
+  }
+
   return (
     <GlassCard className={`app-card state-${result.state}`} style={{ "--card-index": index } as React.CSSProperties}>
       <div className="card-topline">
@@ -79,6 +105,33 @@ export function AppCard({ result, index }: AppCardProps) {
         )}
       </div>
       {result.detail && <p className="card-detail">{result.detail}</p>}
+      {openIncident && (
+        <div className="incident-banner">
+          <div className="incident-banner-row">
+            <span>Open incident since {formatCheckedAt(openIncident.started_at)}</span>
+            <div className="incident-actions">
+              <button type="button" className="link-button" onClick={() => void handleViewRunbook()}>
+                <BookOpen size={14} aria-hidden="true" />
+                {runbook !== undefined ? "Hide runbook" : "View runbook"}
+              </button>
+              <button
+                type="button"
+                className="link-button"
+                onClick={() => void handleResolve()}
+                disabled={resolving}
+              >
+                <CheckCheck size={14} aria-hidden="true" />
+                Mark resolved
+              </button>
+            </div>
+          </div>
+          {runbook !== undefined && (
+            <pre className="runbook-text">
+              {runbook ?? "No runbook has been written for this app yet."}
+            </pre>
+          )}
+        </div>
+      )}
       {metricEntries.length > 0 && (
         <div className="metric-strip">
           {metricEntries.map(([key, value]) => (
