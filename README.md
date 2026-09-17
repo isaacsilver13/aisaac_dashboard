@@ -51,4 +51,4 @@ The browser cannot provide arbitrary target URLs. All targets come from the prof
 
 ## Current limitations
 
-The Betting Aggregator and NBA Prediction entries are intentionally unavailable in the production profile until public monitoring URLs exist. Gym Tracker and Personal Finance are not active registry entries until those apps are built.
+The Betting Aggregator and NBA Prediction entries are intentionally unavailable in the production profile until public monitoring URLs exist. Portfolio Analysis (formerly "Personal Finance") is registered in the `local` profile only until it's deployed to Fly.io.
