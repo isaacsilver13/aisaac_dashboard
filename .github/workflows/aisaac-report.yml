@@ -1,0 +1,31 @@
+name: AIsaac Coms Report
+
+# Manual trigger only -- no schedule. This polls every repo in
+# backend/app/github_registry.py via the GitHub API and pushes a status
+# report to this app's own /internal/ci-report. Run it by hand from the
+# Actions tab whenever you want a fresh Coms update.
+on:
+  workflow_dispatch: {}
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install backend package
+        run: python -m pip install -e .
+
+      - name: Report CI/PR/issue status to AIsaac Dashboard
+        env:
+          GITHUB_TOKEN: ${{ secrets.REPORT_GITHUB_TOKEN }}
+          INTERNAL_REPORT_SECRET: ${{ secrets.INTERNAL_REPORT_SECRET }}
+          AISAAC_DASHBOARD_URL: ${{ vars.AISAAC_DASHBOARD_URL || 'https://aisaac-dashboard.fly.dev' }}
+        run: python scripts/report_ci_status.py

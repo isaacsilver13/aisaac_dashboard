@@ -5,6 +5,7 @@ import { TabNav } from "./components/TabNav";
 import Agents from "./pages/Agents";
 import Analytics from "./pages/Analytics";
 import CommandCenter from "./pages/CommandCenter";
+import Coms from "./pages/Coms";
 import Tasks from "./pages/Tasks";
 
 const TABS = [
@@ -12,6 +13,7 @@ const TABS = [
   { to: "/agents", label: "Agents" },
   { to: "/analytics", label: "Analytics" },
   { to: "/tasks", label: "Tasks" },
+  { to: "/coms", label: "Coms" },
 ];
 
 export default function App() {
@@ -35,6 +37,7 @@ export default function App() {
         <Route path="/agents" element={<Agents />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/tasks" element={<Tasks />} />
+        <Route path="/coms" element={<Coms />} />
       </Routes>
 
       <footer className="footer-note">

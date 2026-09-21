@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { fetchAgents, fetchAnalytics, fetchDashboard } from "./api";
+import { fetchAgents, fetchAnalytics, fetchComsEvents, fetchDashboard } from "./api";
 
 const response = {
   profile: "local",
@@ -105,5 +105,37 @@ describe("fetchAnalytics", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("secret body", { status: 502 })));
 
     await expect(fetchAnalytics()).rejects.toThrow("Analytics request failed with HTTP 502.");
+  });
+});
+
+describe("fetchComsEvents", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("requests Coms history without an app_id filter by default", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify([]), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(fetchComsEvents()).resolves.toEqual([]);
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/coms", {
+      headers: { Accept: "application/json" },
+    });
+  });
+
+  it("adds an app_id filter when requested", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify([]), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await fetchComsEvents("vinyl");
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/coms?app_id=vinyl", {
+      headers: { Accept: "application/json" },
+    });
+  });
+
+  it("turns a failed response into a user-safe error", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("secret body", { status: 500 })));
+
+    await expect(fetchComsEvents()).rejects.toThrow("Coms request failed with HTTP 500.");
   });
 });

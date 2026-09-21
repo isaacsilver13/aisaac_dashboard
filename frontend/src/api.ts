@@ -1,4 +1,4 @@
-import type { AgentSummary, DashboardResponse, Incident, RepoActivity } from "./types";
+import type { AgentSummary, CIEvent, DashboardResponse, Incident, RepoActivity } from "./types";
 
 export async function fetchDashboard(forceRefresh = false): Promise<DashboardResponse> {
   const query = forceRefresh ? "?force_refresh=true" : "";
@@ -47,6 +47,17 @@ export async function fetchAnalytics(forceRefresh = false): Promise<RepoActivity
     throw new Error(`Analytics request failed with HTTP ${response.status}.`);
   }
   return (await response.json()) as RepoActivity[];
+}
+
+export async function fetchComsEvents(appId?: string): Promise<CIEvent[]> {
+  const query = appId ? `?app_id=${encodeURIComponent(appId)}` : "";
+  const response = await fetch(`/api/v1/coms${query}`, {
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) {
+    throw new Error(`Coms request failed with HTTP ${response.status}.`);
+  }
+  return (await response.json()) as CIEvent[];
 }
 
 export async function fetchRunbook(appId: string): Promise<string | null> {

@@ -71,3 +71,14 @@ export interface AgentSummary {
   last_run_at: string | null;
   last_run_note: string | null;
 }
+
+export interface CIEvent {
+  id: number;
+  app_id: string;
+  repo: string;
+  event_type: string;
+  ci_status: CiStatus;
+  details: string;
+  received_at: string;
+  notified: boolean;
+}

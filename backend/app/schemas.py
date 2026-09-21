@@ -133,3 +133,24 @@ class AgentSummary(BaseModel):
     scope: tuple[str, ...] = ()
     last_run_at: Optional[datetime] = None
     last_run_note: Optional[str] = None
+
+
+class CIReportIn(BaseModel):
+    app_id: str = Field(pattern=r"^[a-z0-9-]+$")
+    repo: str
+    event_type: str
+    ci_status: CiStatus = "unknown"
+    details: str = ""
+
+
+class CIEventOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    app_id: str
+    repo: str
+    event_type: str
+    ci_status: CiStatus
+    details: str
+    received_at: str
+    notified: bool

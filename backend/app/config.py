@@ -26,6 +26,12 @@ class Settings(BaseSettings):
     github_token: str = ""
     github_cache_ttl_seconds: float = 300.0
 
+    # Coms rollout: push CI/PR/issue status from a GitHub Actions workflow,
+    # recorded as history and (debounced) forwarded to ntfy.sh.
+    ntfy_topic: str = ""
+    coms_debounce_minutes: float = 10.0
+    ci_events_db_path: str = "./aisaac_ci_events.db"
+
 
 @lru_cache
 def get_settings() -> Settings:
