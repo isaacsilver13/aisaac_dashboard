@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     internal_report_secret: str = ""
     stale_report_after_hours: float = 26.0
 
+    github_token: str = ""
+    github_cache_ttl_seconds: float = 300.0
+
 
 @lru_cache
 def get_settings() -> Settings:

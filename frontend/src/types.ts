@@ -34,3 +34,40 @@ export interface Incident {
   resolved_at: string | null;
   notes: string | null;
 }
+
+export type CiStatus = "success" | "failure" | "in_progress" | "unknown";
+
+export interface PullRequestSummary {
+  number: number;
+  title: string;
+  url: string;
+  opened_at: string;
+  stale: boolean;
+}
+
+export interface RepoActivity {
+  repo_id: string;
+  name: string;
+  category: string;
+  owner: string;
+  repo: string;
+  ci_status: CiStatus;
+  open_issue_count: number | null;
+  open_pr_count: number | null;
+  open_pull_requests: PullRequestSummary[];
+  commits_last_7d: number | null;
+  last_commit_at: string | null;
+  checked_at: string;
+  cached: boolean;
+  detail: string | null;
+}
+
+export interface AgentSummary {
+  id: string;
+  name: string;
+  domain: string;
+  description: string;
+  scope: string[];
+  last_run_at: string | null;
+  last_run_note: string | null;
+}

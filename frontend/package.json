@@ -15,6 +15,7 @@
     "typescript": "latest",
     "react": "latest",
     "react-dom": "latest",
+    "react-router-dom": "latest",
     "lucide-react": "latest"
   },
   "devDependencies": {

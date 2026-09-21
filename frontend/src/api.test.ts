@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { fetchDashboard } from "./api";
+import { fetchAgents, fetchAnalytics, fetchDashboard } from "./api";
 
 const response = {
   profile: "local",
@@ -41,5 +41,69 @@ describe("fetchDashboard", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("secret body", { status: 503 })));
 
     await expect(fetchDashboard()).rejects.toThrow("Dashboard request failed with HTTP 503.");
+  });
+});
+
+describe("fetchAgents", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("requests the agent roster", async () => {
+    const agents = [
+      {
+        id: "repo-maintainer",
+        name: "Repo Manager",
+        domain: "Repo hygiene",
+        description: "Audits repos.",
+        scope: ["vinyl"],
+        last_run_at: null,
+        last_run_note: null,
+      },
+    ];
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(agents), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(fetchAgents()).resolves.toEqual(agents);
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/agents", {
+      headers: { Accept: "application/json" },
+    });
+  });
+
+  it("turns a failed response into a user-safe error", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("secret body", { status: 500 })));
+
+    await expect(fetchAgents()).rejects.toThrow("Agents request failed with HTTP 500.");
+  });
+});
+
+describe("fetchAnalytics", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("requests repo activity without a force-refresh query by default", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify([]), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(fetchAnalytics()).resolves.toEqual([]);
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/analytics", {
+      headers: { Accept: "application/json" },
+    });
+  });
+
+  it("adds an explicit refresh query when requested", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify([]), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await fetchAnalytics(true);
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/analytics?force_refresh=true", {
+      headers: { Accept: "application/json" },
+    });
+  });
+
+  it("turns a failed response into a user-safe error", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("secret body", { status: 502 })));
+
+    await expect(fetchAnalytics()).rejects.toThrow("Analytics request failed with HTTP 502.");
   });
 });

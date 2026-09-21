@@ -7,14 +7,27 @@ from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import incidents, reports
+from .agents_registry import get_agents
 from .config import get_settings
+from .github_monitor import GitHubMonitor
+from .github_registry import get_repos
 from .monitoring import Monitor
 from .registry import get_registry
-from .schemas import DashboardResponse, IncidentOut, PushReportIn, ResolveIncidentIn
+from .schemas import (
+    AgentSummary,
+    DashboardResponse,
+    IncidentOut,
+    PushReportIn,
+    RepoActivity,
+    ResolveIncidentIn,
+)
 
 settings = get_settings()
 incidents.configure(settings.incidents_db_path)
 monitor = Monitor(cache_ttl_seconds=settings.cache_ttl_seconds, settings=settings)
+github_monitor = GitHubMonitor(
+    token=settings.github_token, cache_ttl_seconds=settings.github_cache_ttl_seconds
+)
 app = FastAPI(title="AIsaac Dashboard", version="0.1.0")
 
 
@@ -54,6 +67,17 @@ def list_incidents(app_id: Optional[str] = Query(default=None)) -> list[Incident
 @app.post("/api/v1/incidents/{incident_id}/resolve", status_code=204)
 def resolve_incident(incident_id: int, payload: ResolveIncidentIn) -> None:
     incidents.resolve_incident(incident_id, notes=payload.notes)
+
+
+@app.get("/api/v1/agents", response_model=list[AgentSummary])
+def list_agents() -> list[AgentSummary]:
+    return [AgentSummary(**agent.model_dump()) for agent in get_agents()]
+
+
+@app.get("/api/v1/analytics", response_model=list[RepoActivity])
+async def analytics(force_refresh: bool = Query(default=False)) -> list[RepoActivity]:
+    repos = get_repos()
+    return await github_monitor.activity(repos, force_refresh=force_refresh)
 
 
 @app.get("/api/v1/runbooks/{app_id}", response_class=PlainTextResponse)

@@ -73,3 +73,63 @@ class IncidentOut(BaseModel):
 
 class ResolveIncidentIn(BaseModel):
     notes: Optional[str] = None
+
+
+CiStatus = Literal["success", "failure", "in_progress", "unknown"]
+
+
+class RepoDefinition(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: str = Field(pattern=r"^[a-z0-9-]+$")
+    name: str
+    category: str
+    owner: str
+    repo: str
+    stale_days: int = Field(default=14, gt=0)
+    enabled: bool = True
+
+
+class PullRequestSummary(BaseModel):
+    number: int
+    title: str
+    url: str
+    opened_at: datetime
+    stale: bool = False
+
+
+class RepoActivity(BaseModel):
+    repo_id: str
+    name: str
+    category: str
+    owner: str
+    repo: str
+    ci_status: CiStatus = "unknown"
+    open_issue_count: Optional[int] = None
+    open_pr_count: Optional[int] = None
+    open_pull_requests: list[PullRequestSummary] = Field(default_factory=list)
+    commits_last_7d: Optional[int] = None
+    last_commit_at: Optional[datetime] = None
+    checked_at: datetime
+    cached: bool = False
+    detail: Optional[str] = None
+
+
+class AgentDefinition(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: str = Field(pattern=r"^[a-z0-9-]+$")
+    name: str
+    domain: str
+    description: str
+    scope: tuple[str, ...] = ()
+
+
+class AgentSummary(BaseModel):
+    id: str
+    name: str
+    domain: str
+    description: str
+    scope: tuple[str, ...] = ()
+    last_run_at: Optional[datetime] = None
+    last_run_note: Optional[str] = None
