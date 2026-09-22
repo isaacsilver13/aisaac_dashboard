@@ -55,6 +55,15 @@ _REGISTRY: Mapping[str, tuple[AppDefinition, ...]] = {
             readiness_url="http://127.0.0.1:8004/api/v1/health/ready",
             metrics_url="http://127.0.0.1:8004/api/v1/health/metrics",
         ),
+        AppDefinition(
+            id="portfolio-analysis",
+            name="Portfolio Analysis",
+            category="Finance",
+            description="Personal brokerage portfolio import, P&L, and SPY-alpha analysis.",
+            product_url="http://127.0.0.1:5176",
+            health_url="http://127.0.0.1:8005/api/v1/health",
+            readiness_url="http://127.0.0.1:8005/api/v1/health/ready",
+        ),
     ),
     "production": (
         AppDefinition(

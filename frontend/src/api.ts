@@ -1,4 +1,4 @@
-import type { DashboardResponse, Incident } from "./types";
+import type { AgentSummary, CIEvent, DashboardResponse, Incident, RepoActivity } from "./types";
 
 export async function fetchDashboard(forceRefresh = false): Promise<DashboardResponse> {
   const query = forceRefresh ? "?force_refresh=true" : "";
@@ -28,6 +28,36 @@ export async function resolveIncident(incidentId: number, notes?: string): Promi
   if (!response.ok) {
     throw new Error(`Resolve incident failed with HTTP ${response.status}.`);
   }
+}
+
+export async function fetchAgents(): Promise<AgentSummary[]> {
+  const response = await fetch("/api/v1/agents", { headers: { Accept: "application/json" } });
+  if (!response.ok) {
+    throw new Error(`Agents request failed with HTTP ${response.status}.`);
+  }
+  return (await response.json()) as AgentSummary[];
+}
+
+export async function fetchAnalytics(forceRefresh = false): Promise<RepoActivity[]> {
+  const query = forceRefresh ? "?force_refresh=true" : "";
+  const response = await fetch(`/api/v1/analytics${query}`, {
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) {
+    throw new Error(`Analytics request failed with HTTP ${response.status}.`);
+  }
+  return (await response.json()) as RepoActivity[];
+}
+
+export async function fetchComsEvents(appId?: string): Promise<CIEvent[]> {
+  const query = appId ? `?app_id=${encodeURIComponent(appId)}` : "";
+  const response = await fetch(`/api/v1/coms${query}`, {
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) {
+    throw new Error(`Coms request failed with HTTP ${response.status}.`);
+  }
+  return (await response.json()) as CIEvent[];
 }
 
 export async function fetchRunbook(appId: string): Promise<string | null> {

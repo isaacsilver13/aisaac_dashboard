@@ -1,3 +1,4 @@
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -6,15 +7,32 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import incidents, reports
+from . import ci_events, incidents, notify, reports
+from .agents_registry import get_agents
 from .config import get_settings
+from .github_monitor import GitHubMonitor
+from .github_registry import get_repos
 from .monitoring import Monitor
 from .registry import get_registry
-from .schemas import DashboardResponse, IncidentOut, PushReportIn, ResolveIncidentIn
+from .schemas import (
+    AgentSummary,
+    CIEventOut,
+    CIReportIn,
+    DashboardResponse,
+    IncidentOut,
+    PushReportIn,
+    RepoActivity,
+    ResolveIncidentIn,
+)
 
 settings = get_settings()
 incidents.configure(settings.incidents_db_path)
+ci_events.configure(settings.ci_events_db_path)
+_last_notified_at: dict[str, float] = {}
 monitor = Monitor(cache_ttl_seconds=settings.cache_ttl_seconds, settings=settings)
+github_monitor = GitHubMonitor(
+    token=settings.github_token, cache_ttl_seconds=settings.github_cache_ttl_seconds
+)
 app = FastAPI(title="AIsaac Dashboard", version="0.1.0")
 
 
@@ -54,6 +72,46 @@ def list_incidents(app_id: Optional[str] = Query(default=None)) -> list[Incident
 @app.post("/api/v1/incidents/{incident_id}/resolve", status_code=204)
 def resolve_incident(incident_id: int, payload: ResolveIncidentIn) -> None:
     incidents.resolve_incident(incident_id, notes=payload.notes)
+
+
+@app.get("/api/v1/agents", response_model=list[AgentSummary])
+def list_agents() -> list[AgentSummary]:
+    return [AgentSummary(**agent.model_dump()) for agent in get_agents()]
+
+
+@app.get("/api/v1/analytics", response_model=list[RepoActivity])
+async def analytics(force_refresh: bool = Query(default=False)) -> list[RepoActivity]:
+    repos = get_repos()
+    return await github_monitor.activity(repos, force_refresh=force_refresh)
+
+
+@app.post("/internal/ci-report", status_code=204, dependencies=[Depends(_require_internal_secret)])
+def internal_ci_report(payload: CIReportIn) -> None:
+    now = time.monotonic()
+    last = _last_notified_at.get(payload.app_id)
+    should_notify = last is None or (now - last) >= settings.coms_debounce_minutes * 60
+
+    ci_events.record_event(
+        app_id=payload.app_id,
+        repo=payload.repo,
+        event_type=payload.event_type,
+        ci_status=payload.ci_status,
+        details=payload.details,
+        notified=should_notify,
+    )
+
+    if should_notify:
+        message = payload.details or f"[{payload.repo}] {payload.event_type}: {payload.ci_status}"
+        notify.send_coms_notification(settings, message)
+        _last_notified_at[payload.app_id] = now
+
+
+@app.get("/api/v1/coms", response_model=list[CIEventOut])
+def list_coms_events(app_id: Optional[str] = Query(default=None)) -> list[CIEventOut]:
+    return [
+        CIEventOut(**{**dict(row), "notified": bool(row["notified"])})
+        for row in ci_events.list_events(app_id)
+    ]
 
 
 @app.get("/api/v1/runbooks/{app_id}", response_class=PlainTextResponse)
