@@ -119,6 +119,15 @@ _REGISTRY: Mapping[str, tuple[AppDefinition, ...]] = {
             readiness_url="https://isilver-gym-tracker-api.fly.dev/api/v1/health/ready",
             metrics_url="https://isilver-gym-tracker-api.fly.dev/api/v1/health/metrics",
         ),
+        AppDefinition(
+            id="portfolio-analysis",
+            name="Portfolio Analysis",
+            category="Finance",
+            description="Personal brokerage portfolio import, P&L, and SPY-alpha analysis.",
+            product_url="https://portfolio-analysis-web.fly.dev/",
+            health_url="https://portfolio-analysis-api.fly.dev/api/v1/health",
+            readiness_url="https://portfolio-analysis-api.fly.dev/api/v1/health/ready",
+        ),
     ),
 }
 
