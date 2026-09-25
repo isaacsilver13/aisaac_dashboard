@@ -82,6 +82,22 @@ button { cursor: pointer; }
   .agent-row-meta { align-self: flex-start; }
 }
 
+.coms-filters { display: flex; flex-direction: column; gap: 10px; margin: 20px 0; }
+.coms-filter-group { display: flex; flex-wrap: wrap; gap: 8px; }
+.coms-filter-chip {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: "DM Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  padding: 6px 14px;
+  text-transform: uppercase;
+}
+.coms-filter-chip.active { background: #667eea; border-color: #667eea; color: #fff; }
+
 .task-groups { display: flex; flex-direction: column; gap: 16px; }
 .task-group { padding: 22px 23px 18px; }
 .task-list { list-style: none; margin: 14px 0 0; padding: 0; }
