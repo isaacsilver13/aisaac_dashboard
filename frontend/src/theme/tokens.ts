@@ -70,11 +70,3 @@ export const typography = {
   body: { size: "14px", weight: 400 },
   metadata: { size: "11px", weight: 500 },
 } as const;
-
-/** Retained for GlassCard until its glassmorphism treatment is phased out. */
-export const glass = {
-  blur: "16px",
-  background: "rgba(255, 255, 255, 0.06)",
-  border: `1px solid ${color.border}`,
-  shadow: "0 8px 32px rgba(0, 0, 0, 0.35)",
-} as const;

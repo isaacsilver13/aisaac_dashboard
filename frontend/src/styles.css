@@ -27,6 +27,7 @@
 body { margin: 0; min-width: 320px; background: var(--paper); }
 button, a { font: inherit; }
 button { cursor: pointer; }
+a:focus-visible, button:focus-visible { outline: 2px solid #818cf8; outline-offset: 2px; }
 .ambient-grid { background-image: linear-gradient(rgba(73, 102, 92, 0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(73, 102, 92, 0.055) 1px, transparent 1px); background-size: 36px 36px; inset: 0; mask-image: linear-gradient(to bottom, black 0%, transparent 68%); pointer-events: none; position: absolute; }
 .apps-section, .footer-note { margin: 0 auto; max-width: 1260px; position: relative; }
 .brand-mark { align-items: center; background: var(--ink); border-radius: 50%; color: var(--mint); display: flex; height: 38px; justify-content: center; width: 38px; flex: 0 0 auto; }
@@ -36,7 +37,6 @@ button { cursor: pointer; }
 .refresh-button:hover:not(:disabled) { background: var(--surface); border-color: #aabbb0; }
 .refresh-button:disabled { cursor: wait; opacity: 0.6; }
 .spin { animation: spin 0.9s linear infinite; }
-.intro-copy { color: var(--muted); font-size: 16px; line-height: 1.6; margin: 22px 0 0; max-width: 420px; }
 .apps-section { padding-top: 54px; }
 .section-heading { align-items: end; display: flex; justify-content: space-between; margin-bottom: 20px; }
 .section-heading h2 { font-size: 24px; letter-spacing: -0.04em; margin: 0; }
@@ -120,19 +120,12 @@ button { cursor: pointer; }
 .metric-strip { border-top: 1px solid var(--line); display: flex; gap: 30px; margin-top: 18px; padding-top: 15px; }
 .metric span, .metric strong { display: block; }
 .metric strong { font-family: "DM Mono", monospace; font-size: 13px; margin-top: 5px; }
-.error-banner { align-items: center; background: #f8ddd8; color: #8d3c31; display: flex; gap: 10px; margin: 22px auto 0; max-width: 1260px; padding: 12px 15px; position: relative; }
-.error-banner span { font-size: 13px; }
-.error-banner button { background: transparent; border: 0; color: inherit; font-size: 12px; font-weight: 700; margin-left: auto; text-decoration: underline; }
-.loading-grid { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.skeleton-card { animation: shimmer 1.3s infinite; background: linear-gradient(90deg, #e5e7de 20%, #f0f0e9 40%, #e5e7de 60%); background-size: 300% 100%; height: 260px; }
-.empty-state { align-items: center; border: 1px dashed #aabbb0; color: var(--muted); display: flex; gap: 10px; padding: 30px; }
 .footer-note { display: flex; justify-content: space-between; padding: 70px 0 0; }
 @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes shimmer { to { background-position: -100% 0; } }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (max-width: 720px) {
   .ui-page-header { align-items: start; flex-direction: column; gap: 16px; }
-  .app-grid, .loading-grid { grid-template-columns: 1fr; }
+  .app-grid { grid-template-columns: 1fr; }
   .app-card { min-height: 0; }
   .section-heading { align-items: start; flex-direction: column; gap: 14px; }
   .footer-note { flex-direction: column; gap: 8px; }
@@ -168,22 +161,6 @@ body {
 .refresh-button:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.3);
-}
-
-.glass-card {
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  background: var(--glass-background);
-  border: var(--glass-border);
-  box-shadow: var(--glass-shadow);
-  border-radius: 20px;
-}
-
-.bento-grid {
-  display: grid;
-  grid-auto-rows: minmax(148px, auto);
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
 }
 
 .tile-kicker {
@@ -278,30 +255,7 @@ body {
 .activity-down { background: var(--coral); }
 .activity-unavailable { background: #64748b; }
 
-.error-banner {
-  background: rgba(251, 113, 133, 0.1);
-  border: 1px solid rgba(251, 113, 133, 0.25);
-  color: #fda4af;
-}
-
-.skeleton-card {
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  background: linear-gradient(110deg, rgba(255, 255, 255, 0.04) 20%, rgba(255, 255, 255, 0.1) 40%, rgba(255, 255, 255, 0.04) 60%);
-  background-size: 300% 100%;
-}
-
-.empty-state {
-  border-color: rgba(255, 255, 255, 0.2);
-  border-radius: 18px;
-}
-
-@media (max-width: 900px) {
-  .bento-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-
 @media (max-width: 720px) {
-  .bento-grid { grid-template-columns: 1fr; }
   .activity-list { max-height: none; }
 }
 
