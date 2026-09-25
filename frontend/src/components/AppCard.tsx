@@ -3,7 +3,7 @@ import { ArrowUpRight, BookOpen, CheckCheck, Clock3, Gauge, Radio, ShieldCheck }
 
 import { fetchRunbook, resolveIncident } from "../api";
 import type { CheckResult, Incident } from "../types";
-import { GlassCard } from "./GlassCard";
+import { Card } from "./primitives/Card";
 import { StatusBadge } from "./StatusBadge";
 
 interface AppCardProps {
@@ -49,7 +49,11 @@ export function AppCard({ result, index, openIncident, onIncidentResolved }: App
   }
 
   return (
-    <GlassCard className={`app-card state-${result.state}`} style={{ "--card-index": index } as React.CSSProperties}>
+    <Card
+      id={`app-${result.app_id}`}
+      className={`app-card state-${result.state}`}
+      style={{ "--card-index": index } as React.CSSProperties}
+    >
       <div className="card-topline">
         <span className="card-category">{result.category}</span>
         <StatusBadge state={result.state} compact />
@@ -142,6 +146,6 @@ export function AppCard({ result, index, openIncident, onIncidentResolved }: App
           ))}
         </div>
       )}
-    </GlassCard>
+    </Card>
   );
 }
