@@ -27,24 +27,16 @@
 body { margin: 0; min-width: 320px; background: var(--paper); }
 button, a { font: inherit; }
 button { cursor: pointer; }
-.shell { min-height: 100vh; overflow: hidden; padding: 30px clamp(20px, 5vw, 72px) 28px; position: relative; }
 .ambient-grid { background-image: linear-gradient(rgba(73, 102, 92, 0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(73, 102, 92, 0.055) 1px, transparent 1px); background-size: 36px 36px; inset: 0; mask-image: linear-gradient(to bottom, black 0%, transparent 68%); pointer-events: none; position: absolute; }
-.masthead, .intro, .summary-row, .apps-section, .footer-note { margin: 0 auto; max-width: 1260px; position: relative; }
-.masthead { align-items: center; display: flex; justify-content: space-between; }
-.brand-lockup { align-items: center; display: flex; gap: 12px; }
-.brand-mark { align-items: center; background: var(--ink); border-radius: 50%; color: var(--mint); display: flex; height: 38px; justify-content: center; width: 38px; }
+.intro, .summary-row, .apps-section, .footer-note { margin: 0 auto; max-width: 1260px; position: relative; }
+.brand-mark { align-items: center; background: var(--ink); border-radius: 50%; color: var(--mint); display: flex; height: 38px; justify-content: center; width: 38px; flex: 0 0 auto; }
 .eyebrow, .card-category, .section-index, .summary-cell span, .metric span, .fact, .footer-note { color: var(--muted); font-family: "DM Mono", monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
 .eyebrow { margin: 0 0 5px; }
-.brand-lockup h1 { font-size: 16px; letter-spacing: -0.02em; margin: 0; }
 .refresh-button { align-items: center; background: transparent; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); display: flex; gap: 8px; padding: 9px 14px; transition: background 180ms ease, border-color 180ms ease; }
 .refresh-button:hover:not(:disabled) { background: var(--surface); border-color: #aabbb0; }
 .refresh-button:disabled { cursor: wait; opacity: 0.6; }
 .refresh-row { display: flex; justify-content: flex-end; margin: 0 auto; max-width: 1260px; padding-top: 18px; position: relative; }
 .spin { animation: spin 0.9s linear infinite; }
-.tab-nav { display: flex; gap: 6px; margin: 22px auto 0; max-width: 1260px; position: relative; }
-.tab-nav-link { border: 1px solid transparent; border-radius: 999px; color: var(--muted); font-family: "DM Mono", monospace; font-size: 11px; letter-spacing: 0.06em; padding: 8px 16px; text-decoration: none; text-transform: uppercase; transition: background 180ms ease, border-color 180ms ease, color 180ms ease; }
-.tab-nav-link:hover { border-color: var(--line); color: var(--ink); }
-.tab-nav-link-active { background: var(--ink); border-color: var(--ink); color: var(--paper); }
 .intro { align-items: end; display: flex; justify-content: space-between; padding: clamp(72px, 12vw, 150px) 0 62px; }
 .intro h2 { font-size: clamp(42px, 6vw, 82px); font-weight: 700; letter-spacing: -0.065em; line-height: 0.98; margin: 0; max-width: 730px; }
 .intro h2 em { color: var(--mint-deep); font-style: normal; }
@@ -125,7 +117,6 @@ button { cursor: pointer; }
 @keyframes shimmer { to { background-position: -100% 0; } }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (max-width: 720px) {
-  .shell { padding: 20px 16px 24px; }
   .intro { align-items: start; flex-direction: column; gap: 34px; padding: 78px 0 42px; }
   .intro h2 { font-size: clamp(42px, 14vw, 64px); }
   .pulse-summary { align-self: end; }
@@ -146,10 +137,6 @@ body {
     linear-gradient(90deg, rgba(148, 163, 184, 0.035) 1px, transparent 1px);
   background-size: auto, auto, 36px 36px, 36px 36px;
   color: var(--ink);
-}
-
-.shell {
-  padding-top: 28px;
 }
 
 .ambient-grid {
@@ -479,4 +466,107 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .ui-card-interactive, .ui-skeleton { animation: none; transition: none; }
+}
+
+/* ==========================================================================
+   Application shell (frontend/src/components/layout)
+   Persistent sidebar on desktop, top bar + drawer on mobile.
+   ========================================================================== */
+
+.app-shell { display: flex; min-height: 100vh; }
+
+.app-sidebar {
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 220px;
+  gap: 28px;
+  padding: 24px 16px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.app-sidebar-brand, .app-topbar .app-sidebar-brand {
+  align-items: center;
+  display: flex;
+  font-family: "DM Mono", monospace;
+  font-size: 13px;
+  font-weight: 500;
+  gap: 10px;
+  letter-spacing: 0.08em;
+  padding: 0 8px;
+}
+
+.app-sidebar-nav { display: flex; flex: 1; flex-direction: column; gap: 2px; }
+
+.app-sidebar-link {
+  align-items: center;
+  border-radius: 10px;
+  color: var(--muted);
+  display: flex;
+  gap: 12px;
+  padding: 10px 12px;
+  text-decoration: none;
+  transition: background 160ms ease, color 160ms ease;
+}
+.app-sidebar-link:hover { background: rgba(255, 255, 255, 0.06); color: var(--ink); }
+.app-sidebar-link-active { background: rgba(129, 140, 248, 0.14); color: #c7d2fe; }
+.app-sidebar-link:focus-visible { outline: 2px solid #818cf8; outline-offset: 2px; }
+
+.app-sidebar-status {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  display: flex;
+  font-family: "DM Mono", monospace;
+  font-size: 11px;
+  gap: 10px;
+  letter-spacing: 0.04em;
+  padding: 16px 8px 0;
+  text-transform: uppercase;
+}
+
+.app-main { flex: 1; min-width: 0; overflow: hidden; padding: 28px clamp(20px, 4vw, 56px) 40px; position: relative; }
+
+.app-topbar { display: none; }
+.app-topbar-right { align-items: center; display: flex; gap: 14px; }
+.app-topbar-menu-button { background: transparent; border: 0; color: var(--ink); display: flex; padding: 4px; }
+
+.app-drawer-overlay {
+  background: rgba(11, 17, 32, 0.6);
+  inset: 0;
+  position: fixed;
+  z-index: 40;
+}
+.app-drawer {
+  background: #111827;
+  border-right: 1px solid var(--line);
+  bottom: 0;
+  left: 0;
+  padding: 20px 16px;
+  position: fixed;
+  top: 0;
+  width: 260px;
+}
+.app-drawer-close { background: transparent; border: 0; color: var(--ink); margin-bottom: 20px; padding: 4px; }
+
+@media (max-width: 900px) {
+  .app-sidebar { display: none; }
+  .app-topbar {
+    align-items: center;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: #0b1120;
+  }
+  .app-main { padding: 20px 16px 32px; }
+}
+
+@media (min-width: 901px) {
+  .app-drawer-overlay, .app-drawer { display: none; }
 }
