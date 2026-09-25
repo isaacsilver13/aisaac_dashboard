@@ -16,7 +16,8 @@
     "react": "latest",
     "react-dom": "latest",
     "react-router-dom": "latest",
-    "lucide-react": "latest"
+    "lucide-react": "latest",
+    "recharts": "latest"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "latest",
