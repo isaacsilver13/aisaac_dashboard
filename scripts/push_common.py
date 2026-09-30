@@ -20,7 +20,7 @@ CONFIG_KEYS = ("AISAAC_DASHBOARD_URL", "AISAAC_INTERNAL_SECRET")
 def load_config() -> dict[str, str]:
     config: dict[str, str] = {}
     try:
-        config.update(json.loads(CONFIG_FILE.read_text(encoding="utf-8")))
+        config.update(json.loads(CONFIG_FILE.read_text(encoding="utf-8-sig")))
     except (OSError, ValueError):
         pass
     for key in CONFIG_KEYS:
