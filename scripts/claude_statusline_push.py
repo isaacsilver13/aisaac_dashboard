@@ -62,7 +62,7 @@ def format_line(payload: Optional[dict[str, Any]]) -> str:
 def _config() -> dict[str, str]:
     config: dict[str, str] = {}
     try:
-        config.update(json.loads(CONFIG_FILE.read_text(encoding="utf-8")))
+        config.update(json.loads(CONFIG_FILE.read_text(encoding="utf-8-sig")))
     except (OSError, ValueError):
         pass
     for key in ("AISAAC_DASHBOARD_URL", "AISAAC_INTERNAL_SECRET"):

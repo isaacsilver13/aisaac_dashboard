@@ -109,3 +109,13 @@ def test_post_metrics_needs_config():
     import push_common
 
     assert push_common.post_metrics("neon", {}, {}) is False
+
+
+def test_load_config_accepts_powershell_utf8_bom(tmp_path, monkeypatch):
+    import push_common
+
+    config_file = tmp_path / "aisaac_push.json"
+    config_file.write_text('{"AISAAC_DASHBOARD_URL": "https://x.example"}', encoding="utf-8-sig")
+    monkeypatch.setattr(push_common, "CONFIG_FILE", config_file)
+    monkeypatch.delenv("AISAAC_DASHBOARD_URL", raising=False)
+    assert push_common.load_config()["AISAAC_DASHBOARD_URL"] == "https://x.example"
