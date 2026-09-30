@@ -154,3 +154,48 @@ class CIEventOut(BaseModel):
     details: str
     received_at: str
     notified: bool
+
+
+class UsageWindow(BaseModel):
+    used_pct: float = Field(ge=0, le=100)
+    resets_at: datetime
+
+
+class ClaudeUsageIn(BaseModel):
+    session: UsageWindow
+    weekly: UsageWindow
+
+
+class ProviderCostIn(BaseModel):
+    period: str = Field(description="Billing month, e.g. 2026-09")
+    total_usd: float = Field(ge=0)
+    by_app: dict[str, float] = Field(default_factory=dict)
+    estimated: bool = Field(
+        default=True,
+        description="True when per-app figures are estimates rather than invoice lines.",
+    )
+
+
+class NeonUsageIn(BaseModel):
+    period: str = Field(description="Billing period label, e.g. 2026-09")
+    total_compute_hours: float = Field(ge=0)
+    by_app: dict[str, float] = Field(default_factory=dict, description="Compute hours per project")
+
+
+class ClaudeUsageOut(ClaudeUsageIn):
+    reported_at: datetime
+
+
+class ProviderCostOut(ProviderCostIn):
+    reported_at: datetime
+
+
+class NeonUsageOut(NeonUsageIn):
+    reported_at: datetime
+
+
+class FinancialSnapshot(BaseModel):
+    claude: Optional[ClaudeUsageOut] = None
+    neon: Optional[NeonUsageOut] = None
+    fly: Optional[ProviderCostOut] = None
+    detail: Optional[str] = None

@@ -1,3 +1,5 @@
+import hmac
+import json
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -6,8 +8,9 @@ from typing import Optional
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import ValidationError
 
-from . import ci_events, incidents, notify, reports
+from . import ci_events, incidents, metrics_store, notify, reports
 from .agents_registry import get_agents
 from .config import get_settings
 from .github_monitor import GitHubMonitor
@@ -18,8 +21,15 @@ from .schemas import (
     AgentSummary,
     CIEventOut,
     CIReportIn,
+    ClaudeUsageIn,
+    ClaudeUsageOut,
     DashboardResponse,
+    FinancialSnapshot,
     IncidentOut,
+    NeonUsageIn,
+    NeonUsageOut,
+    ProviderCostIn,
+    ProviderCostOut,
     PushReportIn,
     RepoActivity,
     ResolveIncidentIn,
@@ -28,6 +38,7 @@ from .schemas import (
 settings = get_settings()
 incidents.configure(settings.incidents_db_path)
 ci_events.configure(settings.ci_events_db_path)
+metrics_store.configure(settings.metrics_db_path)
 _last_notified_at: dict[str, float] = {}
 monitor = Monitor(cache_ttl_seconds=settings.cache_ttl_seconds, settings=settings)
 github_monitor = GitHubMonitor(
@@ -62,6 +73,58 @@ def _require_internal_secret(x_internal_secret: Optional[str] = Header(default=N
 @app.post("/internal/report", status_code=204, dependencies=[Depends(_require_internal_secret)])
 def internal_report(payload: PushReportIn) -> None:
     reports.record_report(payload.app_id, payload.status, payload.metrics)
+
+
+def _require_read_token(x_dashboard_token: Optional[str] = Header(default=None)) -> None:
+    if not settings.dashboard_read_token:
+        raise HTTPException(503, "Financial figures are not configured on this deployment.")
+    if not hmac.compare_digest(x_dashboard_token or "", settings.dashboard_read_token):
+        raise HTTPException(401, "Invalid or missing dashboard token.")
+
+
+_METRIC_MODELS = {"claude": ClaudeUsageIn, "neon": NeonUsageIn, "fly": ProviderCostIn}
+
+
+@app.post(
+    "/internal/metrics/{source}",
+    status_code=204,
+    dependencies=[Depends(_require_internal_secret)],
+)
+def internal_metrics(source: str, payload: dict) -> None:
+    model = _METRIC_MODELS.get(source)
+    if model is None:
+        raise HTTPException(404, f"Unknown metrics source '{source}'.")
+    try:
+        parsed = model.model_validate(payload)
+    except ValidationError as exc:
+        raise HTTPException(422, exc.errors(include_url=False, include_context=False)) from exc
+    metrics_store.save(source, parsed.model_dump_json())
+
+
+@app.get(
+    "/api/v1/command-center/financials",
+    response_model=FinancialSnapshot,
+    dependencies=[Depends(_require_read_token)],
+)
+def financials() -> FinancialSnapshot:
+    def _load(source: str, out_model):
+        row = metrics_store.load(source)
+        if row is None:
+            return None
+        return out_model.model_validate(
+            {**json.loads(row["payload"]), "reported_at": row["reported_at"]}
+        )
+
+    claude = _load("claude", ClaudeUsageOut)
+    neon = _load("neon", NeonUsageOut)
+    fly = _load("fly", ProviderCostOut)
+    missing = [n for n, v in (("claude", claude), ("neon", neon), ("fly", fly)) if v is None]
+    return FinancialSnapshot(
+        claude=claude,
+        neon=neon,
+        fly=fly,
+        detail=f"No data reported yet for: {', '.join(missing)}." if missing else None,
+    )
 
 
 @app.get("/api/v1/incidents", response_model=list[IncidentOut])

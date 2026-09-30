@@ -1,4 +1,19 @@
-import type { AgentSummary, CIEvent, DashboardResponse, Incident, RepoActivity } from "./types";
+import type { AgentSummary, CIEvent, DashboardResponse, FinancialSnapshot, Incident, RepoActivity } from "./types";
+
+export class FinancialsAuthError extends Error {}
+
+export async function fetchFinancials(token: string): Promise<FinancialSnapshot> {
+  const response = await fetch("/api/v1/command-center/financials", {
+    headers: { Accept: "application/json", "X-Dashboard-Token": token },
+  });
+  if (response.status === 401) {
+    throw new FinancialsAuthError("Invalid dashboard token.");
+  }
+  if (!response.ok) {
+    throw new Error(`Financials request failed with HTTP ${response.status}.`);
+  }
+  return (await response.json()) as FinancialSnapshot;
+}
 
 export async function fetchDashboard(forceRefresh = false): Promise<DashboardResponse> {
   const query = forceRefresh ? "?force_refresh=true" : "";
