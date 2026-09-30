@@ -5,6 +5,7 @@ import { fetchDashboard, fetchIncidents } from "../api";
 import { AppCard } from "../components/AppCard";
 import { ActivityFeed } from "../components/dashboard/ActivityFeed";
 import { AttentionPanel } from "../components/dashboard/AttentionPanel";
+import { FinancialsPanel } from "../components/dashboard/FinancialsPanel";
 import { SystemOverview } from "../components/dashboard/SystemOverview";
 import { EmptyState } from "../components/primitives/EmptyState";
 import { ErrorState } from "../components/primitives/ErrorState";
@@ -74,6 +75,8 @@ export default function CommandCenter() {
           <AttentionPanel openIncidents={openIncidents} results={results} />
         </div>
       )}
+
+      <FinancialsPanel />
 
       <section className="apps-section" aria-labelledby="apps-heading">
         <div className="section-heading">

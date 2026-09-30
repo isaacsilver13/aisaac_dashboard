@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A standalone links-and-health dashboard for Isaac's other applications. `backend/` is a FastAPI monitor with a normalized health contract; `frontend/` is a React dashboard. The monitor only checks configured *public* endpoints server-side — it never accesses another app's database, local artifacts, authenticated data, or financial data.
+A standalone links-and-health dashboard for Isaac's other applications. `backend/` is a FastAPI monitor with a normalized health contract; `frontend/` is a React dashboard. The monitor only checks configured *public* endpoints server-side — it never accesses another app's database, local artifacts, authenticated data, or financial data. **One narrow exception:** Claude usage and Neon/Fly cost figures are *pushed* by external jobs to `POST /internal/metrics/{source}` (`claude`, `neon`, `fly`; guarded by `INTERNAL_REPORT_SECRET`, stored by `metrics_store.py`) and served from `GET /api/v1/command-center/financials`, which requires `DASHBOARD_READ_TOKEN` (a separate read-only token sent as `X-Dashboard-Token`). The dashboard holds no Claude, Neon or Fly credentials; the pushing scripts live in `scripts/` (see `scripts/README.md`). Neon is reported as compute hours per project (its API has no dollars), and Fly cost is an estimate reconciled to a manually entered invoice total (Fly has no billing API).
 
 ## Commands
 

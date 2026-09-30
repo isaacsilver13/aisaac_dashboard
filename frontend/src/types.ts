@@ -82,3 +82,36 @@ export interface CIEvent {
   received_at: string;
   notified: boolean;
 }
+
+export interface UsageWindow {
+  used_pct: number;
+  resets_at: string;
+}
+
+export interface ClaudeUsage {
+  session: UsageWindow;
+  weekly: UsageWindow;
+  reported_at: string;
+}
+
+export interface ProviderCost {
+  period: string;
+  total_usd: number;
+  by_app: Record<string, number>;
+  estimated: boolean;
+  reported_at: string;
+}
+
+export interface NeonUsage {
+  period: string;
+  total_compute_hours: number;
+  by_app: Record<string, number>;
+  reported_at: string;
+}
+
+export interface FinancialSnapshot {
+  claude: ClaudeUsage | null;
+  neon: NeonUsage | null;
+  fly: ProviderCost | null;
+  detail: string | null;
+}
