@@ -49,6 +49,36 @@ provider errors.
 
 The browser cannot provide arbitrary target URLs. All targets come from the profile registry in `backend/app/registry.py`.
 
+## Adding or changing an app's URL
+
+Every monitored URL lives in `backend/app/registry.py`, so a URL change is a one-line edit there. Each `AppDefinition` has a `local` and a `production` entry:
+
+| Field | What it is |
+|---|---|
+| `product_url` | Where the card's click-through link goes (also page-checked). |
+| `health_url` | Liveness endpoint. Returns JSON with a `status` field. |
+| `readiness_url` | Optional. Readiness, tracked separately from liveness. |
+| `metrics_url` + `metric_allowlist` | Optional. Only allowlisted scalar fields are shown. |
+
+To change a URL, edit it in `registry.py`, then check it:
+
+```powershell
+Set-Location backend
+python -m scripts.check_urls              # pings every URL in the production profile
+python -m scripts.check_urls --profile local
+python -m scripts.check_urls --ipv4       # if IPv6 to fly.dev is flaky on your network
+```
+
+The script prints `PASS` / `SLOW` / `FAIL` per URL and exits non-zero if any fail. `tests/test_registry.py` also guards against reintroducing retired hostnames.
+
+To add an app, add an `AppDefinition` to both profiles (use `monitor_target="push"` for apps that report in with a heartbeat instead of exposing a public URL). Setting `enabled=False` on an entry stops it being checked and shows its card as "Not configured"; to remove an app from the dashboard entirely, delete its entry from that profile.
+
+Most apps are single-container Fly apps, so their UI and API share one host. Vinyl is the exception (`vinyl-catalog` UI, `vinyl-api` API).
+
+## Cold starts
+
+Fly machines scale to zero. Each health check has a 10s timeout and retries once (connection error, timeout, or a 502/503/504) before an app is marked `down`. A response that needed the retry, or took more than about 3s, shows as **Slow / waking up** instead of down. A `down` card shows the error and the time of the last check.
+
 ## Current limitations
 
-The Betting Aggregator and NBA Prediction entries are intentionally unavailable in the production profile until public monitoring URLs exist. Portfolio Analysis (formerly "Personal Finance") is registered in the `local` profile only until it's deployed to Fly.io.
+NBA Prediction is push-based (heartbeat only) and has no product URL in the production profile. The `local` profile still points at localhost ports and only works when those apps are running.

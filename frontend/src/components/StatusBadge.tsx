@@ -1,9 +1,10 @@
-import { CircleCheck, CircleDashed, CircleX, Clock9, TriangleAlert } from "lucide-react";
+import { CircleCheck, CircleDashed, CircleX, Clock9, Hourglass, TriangleAlert } from "lucide-react";
 
 import type { HealthState } from "../types";
 
 const statusConfig: Record<HealthState, { label: string; className: string; Icon: typeof CircleCheck }> = {
   up: { label: "Operational", className: "status-up", Icon: CircleCheck },
+  slow: { label: "Slow / waking up", className: "status-slow", Icon: Hourglass },
   degraded: { label: "Degraded", className: "status-degraded", Icon: TriangleAlert },
   down: { label: "Down", className: "status-down", Icon: CircleX },
   unavailable: { label: "Not configured", className: "status-unavailable", Icon: CircleDashed },

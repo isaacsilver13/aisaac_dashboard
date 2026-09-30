@@ -1,4 +1,4 @@
-export type HealthState = "up" | "degraded" | "down" | "unavailable" | "stale";
+export type HealthState = "up" | "slow" | "degraded" | "down" | "unavailable" | "stale";
 
 export interface CheckResult {
   app_id: string;

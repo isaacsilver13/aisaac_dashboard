@@ -5,7 +5,7 @@ from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
-HealthState = Literal["up", "degraded", "down", "unavailable", "stale"]
+HealthState = Literal["up", "slow", "degraded", "down", "unavailable", "stale"]
 CheckKind = Literal["json", "page"]
 MonitorTarget = Literal["health", "page", "push"]
 
@@ -24,7 +24,7 @@ class AppDefinition(BaseModel):
     check_kind: CheckKind = "json"
     monitor_target: MonitorTarget = "health"
     metric_allowlist: tuple[str, ...] = ()
-    timeout_seconds: float = Field(default=5.0, gt=0, le=30)
+    timeout_seconds: float = Field(default=10.0, gt=0, le=30)
     enabled: bool = True
 
 

@@ -11,11 +11,22 @@ from . import alerts, incidents, reports
 from .config import Settings
 from .schemas import AppDefinition, CheckResult, HealthState
 
+# Fly's proxy answers these while a stopped machine is still starting.
+RETRYABLE_STATUSES = frozenset({502, 503, 504})
+
 
 class Monitor:
-    def __init__(self, cache_ttl_seconds: float = 20.0, settings: Settings | None = None) -> None:
+    def __init__(
+        self,
+        cache_ttl_seconds: float = 20.0,
+        settings: Settings | None = None,
+        retry_delay_seconds: float = 2.0,
+        slow_after_ms: float = 3000.0,
+    ) -> None:
         self.cache_ttl_seconds = cache_ttl_seconds
         self.settings = settings
+        self.retry_delay_seconds = retry_delay_seconds
+        self.slow_after_ms = slow_after_ms
         self._cache: tuple[float, list[CheckResult]] | None = None
         self._last_state: dict[str, HealthState] = {}
 
@@ -67,12 +78,9 @@ class Monitor:
             return self._unavailable(app, checked_at, "No health endpoint is configured.")
 
         started = time.perf_counter()
-        try:
-            response = await client.get(str(app.health_url), timeout=app.timeout_seconds)
-        except httpx.TimeoutException:
-            return self._failure(app, checked_at, started, "Health check timed out.")
-        except httpx.HTTPError:
-            return self._failure(app, checked_at, started, "Health check could not connect.")
+        response, error, retried = await self._get_with_retry(client, app)
+        if response is None:
+            return self._failure(app, checked_at, started, error or "Health check failed.")
 
         response_ms = round((time.perf_counter() - started) * 1000, 1)
         if response.status_code < 200 or response.status_code >= 300:
@@ -119,6 +127,13 @@ class Monitor:
         page_state = await self._check_page_state(client, app)
         if state == "up" and page_state == "down":
             state = "degraded"
+        if state == "up" and (retried or response_ms >= self.slow_after_ms):
+            state = "slow"
+            detail = detail or (
+                "Waking up: first attempt failed, recovered on retry."
+                if retried
+                else f"Slow response ({response_ms:.0f} ms)."
+            )
         return CheckResult(
             app_id=app.id,
             name=app.name,
@@ -136,6 +151,28 @@ class Monitor:
             metrics=metrics,
             detail=detail,
         )
+
+    async def _get_with_retry(
+        self, client: httpx.AsyncClient, app: AppDefinition
+    ) -> tuple[httpx.Response | None, str | None, bool]:
+        """GET the health URL, retrying once so a Fly cold start is not reported as down."""
+        error: str | None = None
+        for attempt in range(2):
+            if attempt:
+                await asyncio.sleep(self.retry_delay_seconds)
+            try:
+                response = await client.get(str(app.health_url), timeout=app.timeout_seconds)
+            except httpx.TimeoutException:
+                error = "Health check timed out."
+                continue
+            except httpx.HTTPError:
+                error = "Health check could not connect."
+                continue
+            if attempt == 0 and response.status_code in RETRYABLE_STATUSES:
+                error = f"Endpoint returned HTTP {response.status_code}."
+                continue
+            return response, None, attempt > 0
+        return None, error, True
 
     def _check_pushed_report(self, app: AppDefinition, checked_at: datetime) -> CheckResult:
         stale_after = self.settings.stale_report_after_hours if self.settings else 26.0

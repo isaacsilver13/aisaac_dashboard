@@ -13,7 +13,7 @@ import { Skeleton } from "../components/primitives/Skeleton";
 import { useAsyncData } from "../hooks/useAsyncData";
 import type { DashboardResponse, HealthState, Incident } from "../types";
 
-const stateOrder: HealthState[] = ["down", "degraded", "stale", "up", "unavailable"];
+const stateOrder: HealthState[] = ["down", "degraded", "slow", "stale", "up", "unavailable"];
 
 function formatRefreshTime(value: string): string {
   return new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit", second: "2-digit" }).format(
