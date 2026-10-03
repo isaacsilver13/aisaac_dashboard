@@ -11,6 +11,7 @@ primary_region = "ewr"
 
 [env]
   PROFILE = "production"
+  CACHE_TTL_SECONDS = "7200"
   INCIDENTS_DB_PATH = "/data/aisaac_incidents.db"
   CI_EVENTS_DB_PATH = "/data/aisaac_ci_events.db"
   SECOND_BRAIN_DB_PATH = "/data/aisaac_second_brain.db"
