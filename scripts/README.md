@@ -40,6 +40,15 @@ estimates fresh. Any gap between the estimates and the invoice shows as `(unattr
 Autostopped machines have little event history, so compute is undercounted; expect most of the
 invoice to land in `(unattributed)` until you refine the estimate.
 
+## AI digest — `ai_digest_push.py`
+
+Fetches the feeds in `ai_digest_sources.json`, asks an LLM (`ai_digest_llm.py`, swappable) to summarize and prioritize, and pushes the digest to `POST /internal/ai-digest/sync`. Runs daily from `.github/workflows/ai-digest.yml`; see the README's "AI digest" section for setup. Standard library only.
+
+    python scripts/ai_digest_push.py --dry-run   # fetch + select only
+    python scripts/ai_digest_push.py --no-push   # also run the LLM, print the JSON
+
+The LLM key (`ANTHROPIC_API_KEY` or `OPENAI_API_KEY`) is read from the environment only and is never sent to the dashboard.
+
 ## second_brain_push.py
 
 Syncs the Obsidian vault (`wikis/`, `knowledge/`, `projects/`, `questions/`) to the dashboard's Second Brain page and Command Center card. Vault path: `SECOND_BRAIN_PATH` (default `~/second-brain`). It aborts if any note holds a credential-shaped string. Run after committing vault changes:

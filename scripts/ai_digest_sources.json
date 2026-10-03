@@ -1,0 +1,40 @@
+{
+  "interests": [
+    "Examples of what people are building with AI, including real use cases and shipped projects",
+    "Tips, techniques and workflows for getting the most out of AI models and coding assistants",
+    "Building better AI systems: evals, agent design, retrieval, context engineering, cost and latency"
+  ],
+  "max_age_hours": 36,
+  "max_items_per_source": 8,
+  "max_candidates": 60,
+  "max_digest_items": 15,
+  "sources": [
+    {"name": "Simon Willison", "type": "rss", "url": "https://simonwillison.net/atom/everything/", "weight": 1.0},
+    {"name": "Latent Space", "type": "rss", "url": "https://www.latent.space/feed", "weight": 1.0},
+    {"name": "Import AI", "type": "rss", "url": "https://importai.substack.com/feed", "weight": 0.9},
+    {"name": "Hamel Husain", "type": "rss", "url": "https://hamel.dev/index.xml", "weight": 1.0},
+    {"name": "Eugene Yan", "type": "rss", "url": "https://eugeneyan.com/rss/", "weight": 1.0},
+    {"name": "Lilian Weng", "type": "rss", "url": "https://lilianweng.github.io/index.xml", "weight": 0.8},
+    {"name": "Chip Huyen", "type": "rss", "url": "https://huyenchip.com/feed.xml", "weight": 0.8},
+    {"name": "Hugging Face Blog", "type": "rss", "url": "https://huggingface.co/blog/feed.xml", "weight": 0.8},
+    {"name": "OpenAI News", "type": "rss", "url": "https://openai.com/news/rss.xml", "weight": 0.8},
+    {"name": "Google DeepMind", "type": "rss", "url": "https://deepmind.google/blog/rss.xml", "weight": 0.7},
+    {"name": "Hugging Face Daily Papers", "type": "hf_papers", "weight": 0.6},
+    {
+      "name": "Hacker News",
+      "type": "hn",
+      "tags": "story",
+      "queries": ["LLM", "AI agents", "Claude", "RAG", "AI coding", "evals"],
+      "min_points": 80,
+      "weight": 0.7
+    },
+    {
+      "name": "Show HN",
+      "type": "hn",
+      "tags": "show_hn",
+      "queries": ["AI", "LLM", "agent", "Claude"],
+      "min_points": 20,
+      "weight": 0.7
+    }
+  ]
+}

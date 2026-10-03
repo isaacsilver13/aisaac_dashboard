@@ -1,6 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 
 import { AppShell } from "./components/layout/AppShell";
+import AiDigest from "./pages/AiDigest";
 import Automations from "./pages/Automations";
 import Agents from "./pages/Agents";
 import Analytics from "./pages/Analytics";
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="/tasks" element={<Tasks />} />
         <Route path="/automations" element={<Automations />} />
         <Route path="/knowledge" element={<SecondBrain />} />
+        <Route path="/ai-digest" element={<AiDigest />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/second-brain" element={<RedirectKeepSearch to="/knowledge" />} />
         <Route path="/analytics" element={<RedirectKeepSearch to="/github" />} />

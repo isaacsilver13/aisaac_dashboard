@@ -51,6 +51,11 @@ class Settings(BaseSettings):
     # Second-brain vault notes pushed by scripts/second_brain_push.py (read-token gated).
     second_brain_db_path: str = "./aisaac_second_brain.db"
 
+    # Daily AI digests pushed by scripts/ai_digest_push.py (read-token gated). The dashboard holds
+    # no LLM key: the push job fetches, summarizes and ranks, then sends the finished digest.
+    ai_digest_db_path: str = "./aisaac_ai_digest.db"
+    ai_digest_retention_days: int = 30
+
 
 @lru_cache
 def get_settings() -> Settings:

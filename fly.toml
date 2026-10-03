@@ -17,6 +17,7 @@ primary_region = "ewr"
   SECOND_BRAIN_DB_PATH = "/data/aisaac_second_brain.db"
   HEALTH_DB_PATH = "/data/aisaac_health.db"
   METRICS_DB_PATH = "/data/aisaac_metrics.db"
+  AI_DIGEST_DB_PATH = "/data/aisaac_ai_digest.db"
 
 [http_service]
   internal_port = 8000

@@ -19,6 +19,7 @@ The monitor checks configured public endpoints server-side. It does not access a
 | `/tasks` | Open pull requests and unresolved incidents. |
 | `/automations` | Last run and staleness of push jobs and background tasks (observed, not scheduled). |
 | `/knowledge` | Second-brain notes (token-gated). |
+| `/ai-digest` | Daily AI news and practice, summarized and ranked; every item links to its original source (token-gated). The overview shows the top three. |
 | `/settings` | Dashboard token, backend configuration status, theme. |
 
 Light and dark themes (tokens in `frontend/src/theme/theme.css`), Iconoir icons, and Motion transitions that respect `prefers-reduced-motion`.
@@ -36,6 +37,16 @@ Backend settings come from environment variables (`backend/app/config.py`). Secr
 | `RESEND_API_KEY`, `ALERT_TO_EMAIL` | Email alerts. |
 | `NTFY_TOPIC` | CI push notifications. |
 | `HEALTH_POLL_INTERVAL_SECONDS` | Optional in-process poller (default 0 = off). |
+
+## AI digest
+
+A daily digest of AI news, builds and techniques, summarized and ranked by an LLM. It is built outside the dashboard by `scripts/ai_digest_push.py`, which `.github/workflows/ai-digest.yml` runs every morning (and on demand from the Actions tab). The script fetches the feeds in `scripts/ai_digest_sources.json`, asks an LLM to summarize and prioritize, and pushes the result to `POST /internal/ai-digest/sync`. The dashboard stores 30 days of digests and shows them on `/ai-digest` behind the dashboard token. It never fetches feeds or calls an LLM itself, so it holds no LLM key.
+
+- **Citations are checkable.** Each item's link, title, source and date are copied from the fetched feed. The model only writes the summary, category, priority and a "why it matters" line, and anything it says about an item it wasn't given is discarded. An item with no excerpt is marked "Title only" and capped at priority 3.
+- **Swappable LLM.** `DIGEST_LLM_PROVIDER` (`anthropic` by default, or `openai`) and `DIGEST_LLM_MODEL`. To add a provider, register one function in `scripts/ai_digest_llm.py`.
+- **GitHub setup.** Repo secrets `ANTHROPIC_API_KEY` (or `OPENAI_API_KEY`) and `INTERNAL_REPORT_SECRET`; optional variables `DIGEST_LLM_PROVIDER`, `DIGEST_LLM_MODEL`, `AISAAC_DASHBOARD_URL`.
+- **Sources and interests.** Edit `scripts/ai_digest_sources.json` to add feeds or change the reader's interests, the age window and the caps. A feed that fails appears under "Source problems" on the page; it never fails the run.
+- **Try it locally.** `python scripts/ai_digest_push.py --dry-run` fetches and selects without an LLM or a push; `--no-push` also runs the LLM and prints the digest JSON.
 
 ## History
 

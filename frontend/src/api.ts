@@ -1,4 +1,4 @@
-import type { AutomationStatus, ConfigItem, MetricsHistory, AppLogs, Deployments, HealthHistory, HistoryRange, AgentSummary, CIEvent, DashboardResponse, FinancialSnapshot, Incident, Note, NoteListItem, RepoActivity, SecondBrainSummary } from "./types";
+import type { AutomationStatus, ConfigItem, MetricsHistory, AppLogs, Deployments, HealthHistory, HistoryRange, AgentSummary, CIEvent, DashboardResponse, FinancialSnapshot, Digest, Incident, Note, NoteListItem, RepoActivity, SecondBrainSummary } from "./types";
 
 export class FinancialsAuthError extends Error {}
 
@@ -104,6 +104,21 @@ export const fetchNotes = (token: string, q = "", folder = "") =>
 
 export const fetchNote = (token: string, path: string) =>
   secondBrainGet<Note>(`notes/${path.split("/").map(encodeURIComponent).join("/")}`, token);
+
+async function aiDigestGet<T>(path: string, token: string): Promise<T> {
+  const response = await fetch(`/api/v1/ai-digest${path}`, {
+    headers: { Accept: "application/json", "X-Dashboard-Token": token },
+  });
+  if (response.status === 401) throw new FinancialsAuthError("Invalid dashboard token.");
+  if (!response.ok) throw new Error(`AI digest request failed with HTTP ${response.status}.`);
+  return (await response.json()) as T;
+}
+
+/** The newest digest, or the one for `date` (YYYY-MM-DD). */
+export const fetchAiDigest = (token: string, date?: string) =>
+  aiDigestGet<Digest>(date ? `/${encodeURIComponent(date)}` : "", token);
+
+export const fetchAiDigestDates = (token: string) => aiDigestGet<string[]>("/dates", token);
 
 export async function fetchHealthHistory(appId: string, range: HistoryRange): Promise<HealthHistory> {
   const response = await fetch(`/api/v1/apps/${encodeURIComponent(appId)}/health-history?range=${range}`, {

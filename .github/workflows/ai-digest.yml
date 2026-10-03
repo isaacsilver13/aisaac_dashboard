@@ -1,0 +1,42 @@
+name: AI Digest
+
+# Builds the daily AI digest: fetch sources -> LLM summary and prioritization -> push to the
+# dashboard's /internal/ai-digest/sync. Runs every morning and can be run by hand from the Actions
+# tab. The dashboard itself holds no LLM key; the key lives only in this repo's secrets.
+on:
+  schedule:
+    - cron: "17 11 * * *" # 11:17 UTC, early morning in Chicago
+  workflow_dispatch: {}
+
+concurrency:
+  group: ai-digest
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Standard library only, so there is nothing to install.
+      - name: Build the digest and push it to AIsaac Dashboard
+        env:
+          # Secrets: ANTHROPIC_API_KEY or OPENAI_API_KEY (whichever provider is selected),
+          # and INTERNAL_REPORT_SECRET (already used by the other reporting workflows).
+          # Variables: DIGEST_LLM_PROVIDER (anthropic | openai), DIGEST_LLM_MODEL (required for
+          # openai), AISAAC_DASHBOARD_URL.
+          DIGEST_LLM_PROVIDER: ${{ vars.DIGEST_LLM_PROVIDER || 'anthropic' }}
+          DIGEST_LLM_MODEL: ${{ vars.DIGEST_LLM_MODEL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AISAAC_INTERNAL_SECRET: ${{ secrets.INTERNAL_REPORT_SECRET }}
+          AISAAC_DASHBOARD_URL: ${{ vars.AISAAC_DASHBOARD_URL || 'https://aisaac-dashboard.fly.dev' }}
+        run: python scripts/ai_digest_push.py

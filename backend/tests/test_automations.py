@@ -1,6 +1,13 @@
 from datetime import datetime, timedelta, timezone
 
-from app import automations, ci_events, health_history, metrics_store, second_brain_store
+from app import (
+    ai_digest_store,
+    automations,
+    ci_events,
+    health_history,
+    metrics_store,
+    second_brain_store,
+)
 
 NOW = datetime(2026, 10, 3, 12, 0, tzinfo=timezone.utc)
 
@@ -14,9 +21,11 @@ def test_snapshot_flags_never_ok_stale_and_disabled(tmp_path, monkeypatch):
     second_brain_store.configure(str(tmp_path / "s.db"))
     ci_events.configure(str(tmp_path / "c.db"))
     health_history.configure(str(tmp_path / "h.db"))
+    ai_digest_store.configure(str(tmp_path / "a.db"))
 
     rows = _by_id(automations.snapshot(0, now=NOW))
     assert rows["claude-usage"]["status"] == "never"
+    assert rows["ai-digest"]["status"] == "never"
     assert rows["health-poll"]["status"] == "disabled"
     assert rows["ci-events"]["status"] == "never"
 
@@ -36,4 +45,5 @@ def test_snapshot_flags_never_ok_stale_and_disabled(tmp_path, monkeypatch):
 
 def test_poller_enabled_reads_latest_check(tmp_path):
     health_history.configure(str(tmp_path / "h.db"))
+    ai_digest_store.configure(str(tmp_path / "a.db"))
     assert _by_id(automations.snapshot(60, now=NOW))["health-poll"]["status"] == "never"

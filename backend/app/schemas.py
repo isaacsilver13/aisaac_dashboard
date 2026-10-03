@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime
+import re
+from datetime import date, datetime
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, model_validator
 
 HealthState = Literal["up", "slow", "degraded", "down", "unavailable", "stale"]
 CheckKind = Literal["json", "page"]
@@ -217,3 +218,45 @@ class SecondBrainSyncIn(BaseModel):
 
     meta: dict[str, Any] = {}
     notes: list[NoteIn]
+
+
+DigestCategory = Literal["building", "technique", "systems", "research", "news"]
+_CITATION = re.compile(r"\[(\d+)\]")
+
+
+class DigestItemIn(BaseModel):
+    """One cited item.
+
+    `url`, `title` and `source` come from the fetched feed, never from the LLM.
+    """
+
+    id: int = Field(ge=1)
+    title: str = Field(min_length=1, max_length=300)
+    url: HttpUrl
+    source: str = Field(min_length=1, max_length=100)
+    published_at: Optional[datetime] = None
+    category: DigestCategory
+    priority: int = Field(ge=1, le=5)
+    summary: str = Field(min_length=1, max_length=1200)
+    why_it_matters: str = Field(default="", max_length=600)
+
+
+class DigestIn(BaseModel):
+    """A finished daily digest. `headline` cites items as [id], which must exist in `items`."""
+
+    digest_date: date
+    generated_at: datetime
+    model: str = Field(min_length=1, max_length=100)
+    headline: str = Field(default="", max_length=1500)
+    items: list[DigestItemIn] = Field(max_length=100)
+    source_stats: dict[str, Any] = {}
+
+    @model_validator(mode="after")
+    def _citations_resolve(self) -> "DigestIn":
+        ids = [item.id for item in self.items]
+        if len(ids) != len(set(ids)):
+            raise ValueError("Item ids must be unique.")
+        unknown = {int(n) for n in _CITATION.findall(self.headline)} - set(ids)
+        if unknown:
+            raise ValueError(f"Headline cites unknown item ids: {sorted(unknown)}.")
+        return self

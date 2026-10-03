@@ -4,6 +4,7 @@ import { Refresh, Server } from "iconoir-react";
 import { fetchDashboard, fetchIncidents } from "../api";
 import { AppCard } from "../components/AppCard";
 import { ActivityFeed } from "../components/dashboard/ActivityFeed";
+import { AiDigestPanel } from "../components/dashboard/AiDigestPanel";
 import { AttentionPanel } from "../components/dashboard/AttentionPanel";
 import { FinancialsPanel } from "../components/dashboard/FinancialsPanel";
 import { SecondBrainPanel } from "../components/dashboard/SecondBrainPanel";
@@ -79,6 +80,7 @@ export default function CommandCenter() {
 
       <FinancialsPanel />
       <SecondBrainPanel />
+      <AiDigestPanel />
 
       <section className="apps-section" aria-labelledby="apps-heading">
         <div className="section-heading">

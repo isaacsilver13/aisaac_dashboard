@@ -4,7 +4,7 @@ import json
 import logging
 import time
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -15,6 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
 from . import (
+    ai_digest_store,
     automations,
     ci_events,
     fly_client,
@@ -38,6 +39,7 @@ from .schemas import (
     ClaudeUsageIn,
     ClaudeUsageOut,
     DashboardResponse,
+    DigestIn,
     FinancialSnapshot,
     IncidentOut,
     NeonUsageIn,
@@ -55,6 +57,7 @@ incidents.configure(settings.incidents_db_path)
 ci_events.configure(settings.ci_events_db_path)
 metrics_store.configure(settings.metrics_db_path)
 second_brain_store.configure(settings.second_brain_db_path)
+ai_digest_store.configure(settings.ai_digest_db_path, settings.ai_digest_retention_days)
 health_history.configure(settings.health_db_path, settings.health_retention_days)
 _last_notified_at: dict[str, float] = {}
 monitor = Monitor(cache_ttl_seconds=settings.cache_ttl_seconds, settings=settings)
@@ -328,6 +331,34 @@ def second_brain_note(path: str) -> dict:
     if note is None:
         raise HTTPException(404, "No such note.")
     return note
+
+
+@app.post(
+    "/internal/ai-digest/sync",
+    status_code=204,
+    dependencies=[Depends(_require_internal_secret)],
+)
+def ai_digest_sync(payload: DigestIn) -> None:
+    ai_digest_store.save(payload.digest_date.isoformat(), payload.model_dump_json())
+
+
+@app.get("/api/v1/ai-digest", dependencies=[Depends(_require_read_token)])
+def ai_digest_latest() -> dict:
+    return ai_digest_store.latest() or {"digest_date": None, "items": [], "pushed_at": None}
+
+
+# Declared before the dated route so "dates" is never parsed as a date.
+@app.get("/api/v1/ai-digest/dates", dependencies=[Depends(_require_read_token)])
+def ai_digest_dates() -> list[str]:
+    return ai_digest_store.dates()
+
+
+@app.get("/api/v1/ai-digest/{digest_date}", dependencies=[Depends(_require_read_token)])
+def ai_digest_by_date(digest_date: date) -> dict:
+    digest = ai_digest_store.get(digest_date.isoformat())
+    if digest is None:
+        raise HTTPException(404, "No digest for that date.")
+    return digest
 
 
 frontend_dist = Path(settings.frontend_dist).resolve()

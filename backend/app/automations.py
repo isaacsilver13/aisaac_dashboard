@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from . import ci_events, health_history, metrics_store, second_brain_store
+from . import ai_digest_store, ci_events, health_history, metrics_store, second_brain_store
 
 # (id, name, metrics source, expected_hours)
 _PUSH_JOBS = (
@@ -53,6 +53,10 @@ def snapshot(poll_interval_seconds: float, now: Optional[datetime] = None) -> li
     rows.append(_row(
         "second-brain", "Second brain sync", "push", "scripts/second_brain_push.py",
         brain["pushed_at"] if brain else None, 26.0, now,
+    ))
+    rows.append(_row(
+        "ai-digest", "AI digest", "push", "scripts/ai_digest_push.py (daily workflow)",
+        ai_digest_store.last_pushed_at(), 26.0, now,
     ))
     events = ci_events.list_events(limit=1)
     rows.append(_row(

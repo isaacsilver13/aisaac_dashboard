@@ -476,3 +476,20 @@ button.tab-link { background: transparent; border-left: 0; border-right: 0; bord
 .ui-table-sort { align-items: center; background: transparent; border: 0; color: inherit; display: inline-flex; font: inherit; gap: 4px; padding: 0; }
 .ui-table-sort:hover { color: var(--text); }
 .ui-table-empty { color: var(--text-muted); margin: 0; padding: 20px 12px; text-align: center; }
+
+.digest-headline { font-size: 15px; line-height: 1.6; margin: 6px 0 0; max-width: 78ch; }
+.digest-cite { color: var(--accent); font-family: var(--font-mono); font-size: 12px; margin: 0 1px; text-decoration: none; }
+a.digest-cite:hover { text-decoration: underline; }
+.digest-meta { align-items: center; color: var(--muted); display: flex; flex-wrap: wrap; font-size: 12px; gap: 10px; margin-top: 12px; }
+.digest-failures { color: var(--muted); font-size: 12px; margin-top: 8px; }
+.digest-failures ul { margin: 6px 0 0; padding-left: 18px; }
+.digest-section { margin-top: 20px; }
+.digest-item { max-width: 72ch; }
+.digest-item a { align-items: center; display: inline-flex; font-weight: 600; gap: 4px; }
+.digest-id { color: var(--muted); font-family: var(--font-mono); font-size: 11px; margin-right: 6px; }
+.digest-summary { margin: 4px 0 0; }
+.digest-why { color: var(--muted); margin: 4px 0 0; }
+.digest-host { color: var(--muted); display: block; font-size: 11px; }
+.digest-top { font-size: 13px; list-style: none; margin: 12px 0 0; padding: 0; }
+.digest-top li { align-items: baseline; display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 0; }
+.digest-date-select { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 13px; padding: 6px 10px; }

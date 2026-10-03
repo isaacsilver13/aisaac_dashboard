@@ -137,6 +137,37 @@ export interface Note extends NoteListItem {
   body: string;
 }
 
+export type DigestCategory = "building" | "technique" | "systems" | "research" | "news";
+
+/** `title`, `url`, `source` and `published_at` come from the fetched feed, never from the LLM. */
+export interface DigestItem {
+  id: number;
+  title: string;
+  url: string;
+  source: string;
+  published_at: string | null;
+  category: DigestCategory;
+  priority: number;
+  summary: string;
+  why_it_matters: string;
+}
+
+export interface DigestSourceStat {
+  fetched: number;
+  recent?: number;
+  error: string | null;
+}
+
+export interface Digest {
+  digest_date: string | null;
+  generated_at?: string;
+  model?: string;
+  headline?: string;
+  items: DigestItem[];
+  source_stats?: Record<string, DigestSourceStat>;
+  pushed_at: string | null;
+}
+
 export type HistoryRange = "24h" | "7d" | "30d";
 
 export interface HealthHistory {
