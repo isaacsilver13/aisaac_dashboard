@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { Activity } from "lucide-react";
+import { Activity } from "iconoir-react";
 
 import { StatusDot } from "../primitives/StatusDot";
 import type { Tone } from "../primitives/tone";
@@ -20,7 +20,7 @@ export function Sidebar({ status, onNavigate }: SidebarProps) {
   return (
     <aside className="app-sidebar" aria-label="Primary">
       <div className="app-sidebar-brand">
-        <div className="brand-mark"><Activity size={18} strokeWidth={2.4} aria-hidden="true" /></div>
+        <div className="brand-mark"><Activity width={18} height={18} aria-hidden="true" /></div>
         <span>AISAAC</span>
       </div>
       <nav className="app-sidebar-nav">
@@ -32,7 +32,7 @@ export function Sidebar({ status, onNavigate }: SidebarProps) {
             onClick={onNavigate}
             className={({ isActive }) => `app-sidebar-link${isActive ? " app-sidebar-link-active" : ""}`}
           >
-            <item.icon size={17} strokeWidth={2.1} aria-hidden="true" />
+            <item.icon width={17} height={17} aria-hidden="true" />
             <span>{item.label}</span>
           </NavLink>
         ))}

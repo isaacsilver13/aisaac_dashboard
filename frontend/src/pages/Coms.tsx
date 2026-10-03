@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { Refresh } from "iconoir-react";
 
 import { fetchComsEvents } from "../api";
 import { ComEventRow } from "../components/coms/ComEventRow";
@@ -36,7 +36,7 @@ export default function Coms() {
         description="Push notifications received from tracked repos."
         actions={
           <button className="refresh-button" type="button" onClick={() => void reload(true)} disabled={refreshing}>
-            <RefreshCw size={16} className={refreshing ? "spin" : ""} aria-hidden="true" />
+            <Refresh width={16} height={16} className={refreshing ? "spin" : ""} aria-hidden="true" />
             <span>{refreshing ? "Checking" : "Refresh"}</span>
           </button>
         }

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { NavLink } from "react-router-dom";
-import { X } from "lucide-react";
+import { Xmark } from "iconoir-react";
 
 import { NAV_ITEMS } from "./navItems";
 
@@ -56,7 +56,7 @@ export function MobileDrawer({ open, onClose }: MobileDrawerProps) {
         onClick={(event) => event.stopPropagation()}
       >
         <button type="button" ref={closeButtonRef} className="app-drawer-close" onClick={onClose} aria-label="Close navigation menu">
-          <X size={20} aria-hidden="true" />
+          <Xmark width={20} height={20} aria-hidden="true" />
         </button>
         <nav className="app-sidebar-nav">
           {NAV_ITEMS.map((item) => (
@@ -67,7 +67,7 @@ export function MobileDrawer({ open, onClose }: MobileDrawerProps) {
               onClick={onClose}
               className={({ isActive }) => `app-sidebar-link${isActive ? " app-sidebar-link-active" : ""}`}
             >
-              <item.icon size={17} strokeWidth={2.1} aria-hidden="true" />
+              <item.icon width={17} height={17} aria-hidden="true" />
               <span>{item.label}</span>
             </NavLink>
           ))}

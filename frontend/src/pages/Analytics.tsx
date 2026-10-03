@@ -1,4 +1,4 @@
-import { RefreshCw } from "lucide-react";
+import { Refresh } from "iconoir-react";
 
 import { fetchAnalytics } from "../api";
 import { CommitActivityChart } from "../components/analytics/CommitActivityChart";
@@ -31,7 +31,7 @@ export default function Analytics() {
         description="Build and deploy health across tracked repos."
         actions={
           <button className="refresh-button" type="button" onClick={() => void reload(true)} disabled={refreshing}>
-            <RefreshCw size={16} className={refreshing ? "spin" : ""} aria-hidden="true" />
+            <Refresh width={16} height={16} className={refreshing ? "spin" : ""} aria-hidden="true" />
             <span>{refreshing ? "Checking" : "Refresh"}</span>
           </button>
         }
