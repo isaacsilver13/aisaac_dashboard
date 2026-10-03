@@ -136,3 +136,19 @@ export interface NoteListItem {
 export interface Note extends NoteListItem {
   body: string;
 }
+
+export type HistoryRange = "24h" | "7d" | "30d";
+
+export interface HealthHistory {
+  app_id: string;
+  range: HistoryRange;
+  summary: {
+    checks: number;
+    uptime_pct: number | null;
+    avg_response_ms: number | null;
+    p95_response_ms: number | null;
+    last_state: HealthState | null;
+    last_checked_at: string | null;
+  };
+  points: { t: string; state: HealthState; response_ms: number | null }[];
+}

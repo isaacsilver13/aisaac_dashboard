@@ -1,5 +1,6 @@
 import { NavLink, Navigate, useLocation, useParams } from "react-router-dom";
 
+import { HealthTab } from "../components/application/HealthTab";
 import { EmptyState } from "../components/primitives/EmptyState";
 import { PageHeader } from "../components/primitives/PageHeader";
 
@@ -28,7 +29,11 @@ export function ApplicationPage() {
           </NavLink>
         ))}
       </nav>
-      <EmptyState message={`${capitalize(tab ?? "overview")} is not built yet.`} />
+      {tab === "health" && appId ? (
+        <HealthTab appId={appId} />
+      ) : (
+        <EmptyState message={`${capitalize(tab ?? "overview")} is not built yet.`} />
+      )}
     </>
   );
 }
