@@ -26,6 +26,8 @@ class AppDefinition(BaseModel):
     metric_allowlist: tuple[str, ...] = ()
     timeout_seconds: float = Field(default=10.0, gt=0, le=30)
     enabled: bool = True
+    # Fly app that hosts this service; enables the Deployments tab (needs FLY_API_TOKEN).
+    fly_app: Optional[str] = Field(default=None, pattern=r"^[a-z0-9-]+$")
 
 
 class CheckResult(BaseModel):
