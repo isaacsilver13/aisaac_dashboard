@@ -31,12 +31,21 @@ function summarizeSystemStatus(
 
 export function AppShell({ children }: AppShellProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem("aisaac-sidebar") === "collapsed");
   const { data, loading, error } = useAsyncData(fetchDashboard);
   const status = summarizeSystemStatus(loading, error, data?.results);
 
   return (
     <div className="app-shell">
-      <Sidebar status={status} />
+      <Sidebar
+        status={status}
+        apps={(data?.results ?? []).map((r) => ({ id: r.app_id, name: r.name }))}
+        collapsed={collapsed}
+        onToggleCollapsed={() => {
+          localStorage.setItem("aisaac-sidebar", collapsed ? "expanded" : "collapsed");
+          setCollapsed(!collapsed);
+        }}
+      />
       <MobileTopBar status={status} onOpenMenu={() => setDrawerOpen(true)} />
       <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
       <main className="app-main">{children}</main>

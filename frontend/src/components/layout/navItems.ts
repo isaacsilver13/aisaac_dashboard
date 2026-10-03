@@ -1,5 +1,5 @@
 import type { ComponentType, SVGProps } from "react";
-import { Activity, Spark, TaskList, Antenna, StatsReport, Book } from "iconoir-react";
+import { AppWindow, Brain, Dashboard, Github, Settings, TaskList, Timer } from "iconoir-react";
 
 export interface NavItem {
   to: string;
@@ -7,13 +7,16 @@ export interface NavItem {
   icon: ComponentType<SVGProps<SVGSVGElement>>;
   /** Matches react-router's `end` prop — true only for the index route. */
   end?: boolean;
+  /** Renders the monitored applications as a collapsible sub-list in the sidebar. */
+  hasApps?: boolean;
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { to: "/", label: "Command Center", icon: Activity, end: true },
-  { to: "/agents", label: "Agents", icon: Spark },
-  { to: "/analytics", label: "Analytics", icon: StatsReport },
+  { to: "/", label: "Overview", icon: Dashboard, end: true },
+  { to: "/applications", label: "Applications", icon: AppWindow, hasApps: true },
+  { to: "/github", label: "GitHub", icon: Github },
   { to: "/tasks", label: "Tasks", icon: TaskList },
-  { to: "/coms", label: "Coms", icon: Antenna },
-  { to: "/second-brain", label: "Second Brain", icon: Book },
+  { to: "/automations", label: "Automations", icon: Timer },
+  { to: "/knowledge", label: "Knowledge", icon: Brain },
+  { to: "/settings", label: "Settings", icon: Settings },
 ];

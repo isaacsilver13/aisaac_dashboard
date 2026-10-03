@@ -349,7 +349,9 @@ body { background-color: var(--bg); color: var(--text); }
   border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
-  flex: 0 0 220px;
+  flex: 0 0 208px;
+  background: var(--sidebar);
+  transition: flex-basis 160ms ease;
   gap: 28px;
   padding: 24px 16px;
   position: sticky;
@@ -372,7 +374,7 @@ body { background-color: var(--bg); color: var(--text); }
 
 .app-sidebar-link {
   align-items: center;
-  border-radius: 10px;
+  border-radius: var(--radius);
   color: var(--muted);
   display: flex;
   gap: 12px;
@@ -454,3 +456,22 @@ body { background-color: var(--bg); color: var(--text); }
 .token-form input { background: transparent; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); padding: 8px 10px; }
 .theme-toggle { background: transparent; border: 0; border-radius: var(--radius); color: var(--text-muted); display: flex; margin-left: auto; padding: 6px; }
 .theme-toggle:hover { background: var(--hover); color: var(--text); }
+
+.app-sidebar-collapsed { flex-basis: 56px; padding: 24px 8px; }
+.app-sidebar-collapsed .app-sidebar-label, .app-sidebar-collapsed .app-sidebar-status > span { display: none; }
+.app-sidebar-collapsed .app-sidebar-link, .app-sidebar-collapsed .app-sidebar-collapse { justify-content: center; }
+.app-sidebar-collapsed .app-sidebar-status { flex-direction: column; padding-top: 12px; }
+.app-sidebar-collapsed .theme-toggle { margin-left: 0; }
+.app-sidebar-collapsed .app-sidebar-brand { justify-content: center; padding: 0; }
+.app-sidebar-row { align-items: center; display: flex; }
+.app-sidebar-row .app-sidebar-link { flex: 1; min-width: 0; }
+.app-sidebar-expand { background: transparent; border: 0; border-radius: var(--radius); color: var(--text-muted); display: flex; padding: 6px; }
+.app-sidebar-expand:hover { background: var(--hover); color: var(--text); }
+.app-sidebar-sub { display: flex; flex-direction: column; gap: 1px; margin: 2px 0 4px 18px; }
+.app-sidebar-sub .app-sidebar-link { font-size: 13px; padding: 6px 12px; }
+.app-sidebar-collapse { align-items: center; background: transparent; border: 0; border-radius: var(--radius); color: var(--text-muted); display: flex; gap: 12px; padding: 8px 12px; }
+.app-sidebar-collapse:hover { background: var(--hover); color: var(--text); }
+.tab-row { border-bottom: 1px solid var(--border); display: flex; gap: 4px; margin-bottom: 20px; }
+.tab-link { border-bottom: 2px solid transparent; color: var(--text-muted); font-size: 13px; padding: 8px 12px; text-decoration: none; }
+.tab-link:hover { color: var(--text); }
+.tab-link-active { border-bottom-color: var(--text); color: var(--text); }
