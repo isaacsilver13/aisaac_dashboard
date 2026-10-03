@@ -1,18 +1,22 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import time
 from datetime import datetime, timezone
 from typing import Any
 
 import httpx
 
-from . import alerts, incidents, reports
+from . import alerts, health_history, incidents, reports
 from .config import Settings
 from .schemas import AppDefinition, CheckResult, HealthState
 
 # Fly's proxy answers these while a stopped machine is still starting.
 RETRYABLE_STATUSES = frozenset({502, 503, 504})
+
+
+logger = logging.getLogger("aisaac.monitoring")
 
 
 class Monitor:
@@ -40,6 +44,10 @@ class Monitor:
         async with httpx.AsyncClient(follow_redirects=True) as client:
             results = list(await asyncio.gather(*(self.check_app(client, app) for app in apps)))
         self._cache = (time.monotonic(), results)
+        try:
+            health_history.record(results)
+        except Exception:  # history must never break the live dashboard
+            logger.exception("Could not record health history")
         for result in results:
             self._handle_transition(result)
         return results
