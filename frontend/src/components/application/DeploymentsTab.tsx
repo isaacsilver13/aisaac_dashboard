@@ -32,7 +32,7 @@ export function DeploymentsTab({ appId }: { appId: string }) {
   const token = readToken();
   const { data, loading, error, reload } = useAsyncData(useCallback(() => fetchDeployments(appId, token), [appId, token]));
 
-  if (!token) return <EmptyState message="Enter your dashboard token on the Knowledge page to view deployments." />;
+  if (!token) return <EmptyState message="Add your dashboard token in Settings to view deployments." />;
   if (error) return <ErrorState message={error} onRetry={() => void reload()} />;
   if (loading || !data) return null;
   if (!data.fly_app) return <EmptyState message="This app is not hosted on Fly, or has no Fly app configured." />;

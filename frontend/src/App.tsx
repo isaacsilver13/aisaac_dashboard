@@ -7,6 +7,7 @@ import CommandCenter from "./pages/CommandCenter";
 import Coms from "./pages/Coms";
 import SecondBrain from "./pages/SecondBrain";
 import { ApplicationPage, ComingSoon, NotFound, RedirectKeepSearch } from "./pages/stubs";
+import Settings from "./pages/Settings";
 import Tasks from "./pages/Tasks";
 
 export default function App() {
@@ -22,7 +23,7 @@ export default function App() {
         <Route path="/tasks" element={<Tasks />} />
         <Route path="/automations" element={<ComingSoon title="Automations" />} />
         <Route path="/knowledge" element={<SecondBrain />} />
-        <Route path="/settings" element={<ComingSoon title="Settings" />} />
+        <Route path="/settings" element={<Settings />} />
         <Route path="/second-brain" element={<RedirectKeepSearch to="/knowledge" />} />
         <Route path="/analytics" element={<RedirectKeepSearch to="/github" />} />
         <Route path="/agents" element={<Agents />} />
