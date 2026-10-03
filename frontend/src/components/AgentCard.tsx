@@ -1,4 +1,4 @@
-import { Clock3 } from "lucide-react";
+import { Clock } from "iconoir-react";
 
 import type { AgentSummary } from "../types";
 import { Badge } from "./primitives/Badge";
@@ -32,7 +32,7 @@ export function AgentCard({ agent }: AgentCardProps) {
         {agent.last_run_note && <p className="agent-row-note">{agent.last_run_note}</p>}
       </div>
       <div className="agent-row-meta">
-        <Clock3 size={14} aria-hidden="true" />
+        <Clock width={14} height={14} aria-hidden="true" />
         <span>{formatLastRun(agent.last_run_at)}</span>
       </div>
     </Card>

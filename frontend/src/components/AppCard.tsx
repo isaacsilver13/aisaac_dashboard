@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowUpRight, BookOpen, CheckCheck, Clock3, Gauge, Radio, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, Book, Check, Clock, Timer, Antenna, ShieldCheck } from "iconoir-react";
 
 import { fetchRunbook, resolveIncident } from "../api";
 import type { CheckResult, Incident } from "../types";
@@ -65,45 +65,45 @@ export function AppCard({ result, index, openIncident, onIncidentResolved }: App
         </div>
         {result.product_url ? (
           <a className="launch-button" href={result.product_url} target="_blank" rel="noreferrer" aria-label={`Open ${result.name}`}>
-            <ArrowUpRight size={18} aria-hidden="true" />
+            <ArrowUpRight width={18} height={18} aria-hidden="true" />
           </a>
         ) : (
           <span className="launch-button launch-button-disabled" aria-hidden="true">
-            <ArrowUpRight size={18} />
+            <ArrowUpRight width={18} height={18} />
           </span>
         )}
       </div>
       <div className="card-rule" />
       <div className="card-facts">
         <div className="fact">
-          <Clock3 size={15} aria-hidden="true" />
+          <Clock width={15} height={15} aria-hidden="true" />
           <span>Checked {formatCheckedAt(result.checked_at)}</span>
         </div>
         <div className="fact">
-          <Gauge size={15} aria-hidden="true" />
+          <Timer width={15} height={15} aria-hidden="true" />
           <span>{result.response_ms === null ? "No response" : `${result.response_ms} ms`}</span>
         </div>
         {result.readiness && (
           <div className="fact">
-            <ShieldCheck size={15} aria-hidden="true" />
+            <ShieldCheck width={15} height={15} aria-hidden="true" />
             <span>Readiness {result.readiness}</span>
           </div>
         )}
         {result.page_state && (
           <div className="fact">
-            <Radio size={15} aria-hidden="true" />
+            <Antenna width={15} height={15} aria-hidden="true" />
             <span>Page {result.page_state}</span>
           </div>
         )}
         {result.metrics_state && (
           <div className="fact">
-            <Gauge size={15} aria-hidden="true" />
+            <Timer width={15} height={15} aria-hidden="true" />
             <span>Metrics {result.metrics_state}</span>
           </div>
         )}
         {result.provider_state && (
           <div className="fact">
-            <Radio size={15} aria-hidden="true" />
+            <Antenna width={15} height={15} aria-hidden="true" />
             <span>Provider {result.provider_state}</span>
           </div>
         )}
@@ -115,7 +115,7 @@ export function AppCard({ result, index, openIncident, onIncidentResolved }: App
             <span>Open incident since {formatCheckedAt(openIncident.started_at)}</span>
             <div className="incident-actions">
               <button type="button" className="link-button" onClick={() => void handleViewRunbook()}>
-                <BookOpen size={14} aria-hidden="true" />
+                <Book width={14} height={14} aria-hidden="true" />
                 {runbook !== undefined ? "Hide runbook" : "View runbook"}
               </button>
               <button
@@ -124,7 +124,7 @@ export function AppCard({ result, index, openIncident, onIncidentResolved }: App
                 onClick={() => void handleResolve()}
                 disabled={resolving}
               >
-                <CheckCheck size={14} aria-hidden="true" />
+                <Check width={14} height={14} aria-hidden="true" />
                 Mark resolved
               </button>
             </div>

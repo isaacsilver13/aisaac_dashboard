@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowUpRight, RefreshCw } from "lucide-react";
+import { WarningTriangle, ArrowUpRight, Refresh } from "iconoir-react";
 
 import { fetchAnalytics } from "../api";
 import { Card } from "../components/primitives/Card";
@@ -29,7 +29,7 @@ export default function Tasks() {
         }
         actions={
           <button className="refresh-button" type="button" onClick={() => void reload(true)} disabled={refreshing}>
-            <RefreshCw size={16} className={refreshing ? "spin" : ""} aria-hidden="true" />
+            <Refresh width={16} height={16} className={refreshing ? "spin" : ""} aria-hidden="true" />
             <span>{refreshing ? "Checking" : "Refresh"}</span>
           </button>
         }
@@ -49,7 +49,7 @@ export default function Tasks() {
               <ul className="task-list">
                 {item.open_pull_requests.map((pr) => (
                   <li className="task-item" key={pr.number}>
-                    {pr.stale && <AlertTriangle size={14} className="task-stale-icon" aria-hidden="true" />}
+                    {pr.stale && <WarningTriangle width={14} height={14} className="task-stale-icon" aria-hidden="true" />}
                     <a href={pr.url} target="_blank" rel="noreferrer">
                       {pr.title}
                     </a>
@@ -57,7 +57,7 @@ export default function Tasks() {
                       opened {formatOpenedAt(pr.opened_at)}
                       {pr.stale ? " · stale" : ""}
                     </span>
-                    <ArrowUpRight size={14} aria-hidden="true" />
+                    <ArrowUpRight width={14} height={14} aria-hidden="true" />
                   </li>
                 ))}
               </ul>

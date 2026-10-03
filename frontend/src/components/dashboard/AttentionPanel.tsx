@@ -1,4 +1,4 @@
-import { CircleCheck, TriangleAlert } from "lucide-react";
+import { CheckCircle, WarningTriangle } from "iconoir-react";
 
 import { Card } from "../primitives/Card";
 import type { CheckResult, Incident } from "../../types";
@@ -17,7 +17,7 @@ export function AttentionPanel({ openIncidents, results }: AttentionPanelProps) 
     return (
       <Card>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <CircleCheck size={18} color="#34d399" aria-hidden="true" />
+          <CheckCircle width={18} height={18} style={{ color: "var(--success)" }} aria-hidden="true" />
           <strong style={{ fontSize: 14 }}>All systems nominal</strong>
         </div>
         <p className="ui-stat-label" style={{ marginTop: 10, textTransform: "none", letterSpacing: 0 }}>
@@ -30,7 +30,7 @@ export function AttentionPanel({ openIncidents, results }: AttentionPanelProps) 
   return (
     <Card>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-        <TriangleAlert size={18} color="#fbbf24" aria-hidden="true" />
+        <WarningTriangle width={18} height={18} style={{ color: "var(--warning)" }} aria-hidden="true" />
         <strong style={{ fontSize: 14 }}>Attention required</strong>
       </div>
       <ul style={{ display: "flex", flexDirection: "column", gap: 10, listStyle: "none", margin: 0, padding: 0 }}>

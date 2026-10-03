@@ -1,18 +1,22 @@
-import { Activity, Bot, ListChecks, Radio, BarChart3, BookOpen, type LucideIcon } from "lucide-react";
+import type { ComponentType, SVGProps } from "react";
+import { AppWindow, Brain, Dashboard, Github, Settings, TaskList, Timer } from "iconoir-react";
 
 export interface NavItem {
   to: string;
   label: string;
-  icon: LucideIcon;
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
   /** Matches react-router's `end` prop — true only for the index route. */
   end?: boolean;
+  /** Renders the monitored applications as a collapsible sub-list in the sidebar. */
+  hasApps?: boolean;
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { to: "/", label: "Command Center", icon: Activity, end: true },
-  { to: "/agents", label: "Agents", icon: Bot },
-  { to: "/analytics", label: "Analytics", icon: BarChart3 },
-  { to: "/tasks", label: "Tasks", icon: ListChecks },
-  { to: "/coms", label: "Coms", icon: Radio },
-  { to: "/second-brain", label: "Second Brain", icon: BookOpen },
+  { to: "/", label: "Overview", icon: Dashboard, end: true },
+  { to: "/applications", label: "Applications", icon: AppWindow, hasApps: true },
+  { to: "/github", label: "GitHub", icon: Github },
+  { to: "/tasks", label: "Tasks", icon: TaskList },
+  { to: "/automations", label: "Automations", icon: Timer },
+  { to: "/knowledge", label: "Knowledge", icon: Brain },
+  { to: "/settings", label: "Settings", icon: Settings },
 ];

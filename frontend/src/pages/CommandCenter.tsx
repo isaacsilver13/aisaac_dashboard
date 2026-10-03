@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { RefreshCw, Server } from "lucide-react";
+import { Refresh, Server } from "iconoir-react";
 
 import { fetchDashboard, fetchIncidents } from "../api";
 import { AppCard } from "../components/AppCard";
@@ -58,7 +58,7 @@ export default function CommandCenter() {
         lastUpdated={dashboard ? formatRefreshTime(dashboard.refreshed_at) : undefined}
         actions={
           <button className="refresh-button" type="button" onClick={() => void reload(true)} disabled={refreshing}>
-            <RefreshCw size={16} className={refreshing ? "spin" : ""} aria-hidden="true" />
+            <Refresh width={16} height={16} className={refreshing ? "spin" : ""} aria-hidden="true" />
             <span>{refreshing ? "Checking" : "Refresh"}</span>
           </button>
         }
@@ -86,7 +86,7 @@ export default function CommandCenter() {
             <p className="eyebrow">Service registry</p>
             <h2 id="apps-heading">Your applications</h2>
           </div>
-          <span className="section-index"><Server size={15} aria-hidden="true" /> {results.length.toString().padStart(2, "0")} tracked</span>
+          <span className="section-index"><Server width={15} height={15} aria-hidden="true" /> {results.length.toString().padStart(2, "0")} tracked</span>
         </div>
         {loading ? (
           <div className="app-grid" aria-label="Loading application statuses">

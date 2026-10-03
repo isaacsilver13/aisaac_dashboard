@@ -10,8 +10,9 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@fontsource-variable/inter": "^5.3.0",
     "@vitejs/plugin-react": "latest",
-    "lucide-react": "latest",
+    "iconoir-react": "^7.12.1",
     "react": "latest",
     "react-dom": "latest",
     "react-markdown": "^10.1.0",
