@@ -126,22 +126,34 @@ def _require_read_token(x_dashboard_token: Optional[str] = Header(default=None))
         raise HTTPException(401, "Invalid or missing dashboard token.")
 
 
-@app.get("/api/v1/apps/{app_id}/deployments", dependencies=[Depends(_require_read_token)])
-async def app_deployments(app_id: str) -> dict:
+async def _fly_lookup(app_id: str, call) -> dict:
+    """Shared by the Fly-backed tabs: resolve the app, then run `call(client, token, fly_app)`."""
     definition = next((a for a in get_registry(settings.profile) if a.id == app_id), None)
     if definition is None:
         raise HTTPException(404, "Unknown application.")
     if not definition.fly_app:
-        return {"app_id": app_id, "fly_app": None, "releases": []}
+        return {"app_id": app_id, "fly_app": None, "items": []}
     if not settings.fly_api_token:
         raise HTTPException(503, "Fly access is not configured on this deployment.")
     try:
         async with httpx.AsyncClient() as client:
-            nodes = await fly_client.releases(client, settings.fly_api_token, definition.fly_app)
+            items = await call(client, settings.fly_api_token, definition.fly_app)
     except (httpx.HTTPError, ValueError):
-        logging.getLogger("aisaac.fly").exception("Fly release lookup failed for %s", app_id)
-        raise HTTPException(502, "Could not read releases from Fly.")
-    return {"app_id": app_id, "fly_app": definition.fly_app, "releases": nodes}
+        logging.getLogger("aisaac.fly").exception("Fly lookup failed for %s", app_id)
+        raise HTTPException(502, "Could not read from Fly.")
+    return {"app_id": app_id, "fly_app": definition.fly_app, "items": items}
+
+
+@app.get("/api/v1/apps/{app_id}/deployments", dependencies=[Depends(_require_read_token)])
+async def app_deployments(app_id: str) -> dict:
+    out = await _fly_lookup(app_id, fly_client.releases)
+    return {"app_id": out["app_id"], "fly_app": out["fly_app"], "releases": out["items"]}
+
+
+@app.get("/api/v1/apps/{app_id}/logs", dependencies=[Depends(_require_read_token)])
+async def app_logs(app_id: str) -> dict:
+    out = await _fly_lookup(app_id, fly_client.logs)
+    return {"app_id": out["app_id"], "fly_app": out["fly_app"], "lines": out["items"]}
 
 
 _METRIC_MODELS = {"claude": ClaudeUsageIn, "neon": NeonUsageIn, "fly": ProviderCostIn}
