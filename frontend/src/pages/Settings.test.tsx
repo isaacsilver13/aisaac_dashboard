@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { readToken } from "../token";
 import Settings from "./Settings";
@@ -8,10 +8,12 @@ import Settings from "./Settings";
 afterEach(() => {
   cleanup();
   window.localStorage.clear();
+  vi.unstubAllGlobals();
 });
 
 describe("Settings", () => {
   it("saves and clears the dashboard token", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ items: [] }))));
     render(<Settings />);
     await userEvent.type(screen.getByLabelText("Dashboard token"), " abc ");
     await userEvent.click(screen.getByRole("button", { name: "Save" }));

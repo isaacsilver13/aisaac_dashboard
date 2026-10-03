@@ -1,4 +1,4 @@
-import type { AutomationStatus, AppLogs, Deployments, HealthHistory, HistoryRange, AgentSummary, CIEvent, DashboardResponse, FinancialSnapshot, Incident, Note, NoteListItem, RepoActivity, SecondBrainSummary } from "./types";
+import type { AutomationStatus, ConfigItem, MetricsHistory, AppLogs, Deployments, HealthHistory, HistoryRange, AgentSummary, CIEvent, DashboardResponse, FinancialSnapshot, Incident, Note, NoteListItem, RepoActivity, SecondBrainSummary } from "./types";
 
 export class FinancialsAuthError extends Error {}
 
@@ -138,4 +138,21 @@ export async function fetchAutomations(token: string): Promise<AutomationStatus[
   if (response.status === 401) throw new FinancialsAuthError("Invalid dashboard token.");
   if (!response.ok) throw new Error(`Automations request failed with HTTP ${response.status}.`);
   return (await response.json()) as AutomationStatus[];
+}
+
+export async function fetchConfigStatus(token: string): Promise<ConfigItem[]> {
+  const response = await fetch("/api/v1/config-status", {
+    headers: { Accept: "application/json", "X-Dashboard-Token": token },
+  });
+  if (response.status === 401) throw new FinancialsAuthError("Invalid dashboard token.");
+  if (!response.ok) throw new Error(`Config request failed with HTTP ${response.status}.`);
+  return ((await response.json()) as { items: ConfigItem[] }).items;
+}
+
+export async function fetchMetricsHistory(appId: string, range: HistoryRange): Promise<MetricsHistory> {
+  const response = await fetch(`/api/v1/apps/${encodeURIComponent(appId)}/metrics-history?range=${range}`, {
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) throw new Error(`Metrics history request failed with HTTP ${response.status}.`);
+  return (await response.json()) as MetricsHistory;
 }
