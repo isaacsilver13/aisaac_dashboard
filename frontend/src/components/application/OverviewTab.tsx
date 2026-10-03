@@ -38,7 +38,6 @@ export function OverviewTab({ appId }: { appId: string }) {
   if (!result) return null;
 
   const repo = repos.data?.find((r) => r.repo_id === appId);
-  const metrics = Object.entries(result.metrics);
 
   return (
     <>
@@ -59,17 +58,6 @@ export function OverviewTab({ appId }: { appId: string }) {
 
       <div className="ui-stat-label" style={{ margin: "16px 0 8px" }}>Signals</div>
       <Card><Signals r={result} /></Card>
-
-      {metrics.length > 0 && (
-        <>
-          <div className="ui-stat-label" style={{ margin: "16px 0 8px" }}>Reported metrics</div>
-          <Card>
-            <div style={{ display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))" }}>
-              {metrics.map(([k, v]) => <Stat key={k} label={k} value={String(v)} />)}
-            </div>
-          </Card>
-        </>
-      )}
 
       <div className="ui-stat-label" style={{ margin: "16px 0 8px" }}>Repository</div>
       <Card>

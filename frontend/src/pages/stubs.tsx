@@ -1,5 +1,6 @@
 import { NavLink, Navigate, useLocation, useParams } from "react-router-dom";
 
+import { DataTab } from "../components/application/DataTab";
 import { DeploymentsTab } from "../components/application/DeploymentsTab";
 import { LogsTab } from "../components/application/LogsTab";
 import { OverviewTab } from "../components/application/OverviewTab";
@@ -34,6 +35,8 @@ export function ApplicationPage() {
       </nav>
       {tab === "health" && appId ? (
         <HealthTab appId={appId} />
+      ) : tab === "data" && appId ? (
+        <DataTab appId={appId} />
       ) : tab === "deployments" && appId ? (
         <DeploymentsTab appId={appId} />
       ) : tab === "logs" && appId ? (

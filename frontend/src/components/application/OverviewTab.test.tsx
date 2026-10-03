@@ -25,7 +25,6 @@ describe("OverviewTab", () => {
     render(<OverviewTab appId="a" />);
     expect(await screen.findByText("Does things")).toBeTruthy();
     expect(screen.getByText("120 ms")).toBeTruthy();
-    expect(screen.getByText("games")).toBeTruthy();
     expect(await screen.findByText("Passing")).toBeTruthy();
   });
 
