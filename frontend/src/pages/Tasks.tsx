@@ -1,71 +1,81 @@
-import { WarningTriangle, ArrowUpRight, Refresh } from "iconoir-react";
+import { Refresh } from "iconoir-react";
 
-import { fetchAnalytics } from "../api";
-import { Card } from "../components/primitives/Card";
-import { EmptyState } from "../components/primitives/EmptyState";
+import { fetchAnalytics, fetchIncidents } from "../api";
 import { ErrorState } from "../components/primitives/ErrorState";
 import { PageHeader } from "../components/primitives/PageHeader";
-import { Skeleton } from "../components/primitives/Skeleton";
+import { Table, type Column } from "../components/primitives/Table";
 import { useAsyncData } from "../hooks/useAsyncData";
 
-function formatOpenedAt(value: string): string {
-  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(new Date(value));
+interface Task {
+  key: string;
+  kind: "Pull request" | "Incident";
+  title: string;
+  url: string | null;
+  source: string;
+  opened: string;
+  stale: boolean;
 }
 
-export default function Tasks() {
-  const { data: activity, loading, refreshing, error, reload } = useAsyncData(fetchAnalytics);
+const day = (iso: string) => new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(new Date(iso));
 
-  const reposWithOpenWork = (activity ?? []).filter((item) => item.open_pull_requests.length > 0);
-  const openPrCount = reposWithOpenWork.reduce((total, item) => total + item.open_pull_requests.length, 0);
+const columns: Column<Task>[] = [
+  { key: "kind", header: "Kind", sortValue: (t) => t.kind, render: (t) => t.kind },
+  {
+    key: "title",
+    header: "Item",
+    sortValue: (t) => t.title,
+    render: (t) => (t.url ? <a href={t.url} target="_blank" rel="noreferrer">{t.title}</a> : t.title),
+  },
+  { key: "source", header: "Source", sortValue: (t) => t.source, render: (t) => t.source },
+  { key: "opened", header: "Opened", sortValue: (t) => t.opened, render: (t) => day(t.opened) },
+  { key: "flag", header: "Flag", sortValue: (t) => (t.stale ? 1 : 0), render: (t) => (t.stale ? "stale" : "—") },
+];
+
+export default function Tasks() {
+  const repos = useAsyncData(fetchAnalytics);
+  const incidents = useAsyncData(fetchIncidents);
+
+  const tasks: Task[] = [
+    ...(repos.data ?? []).flatMap((r) =>
+      r.open_pull_requests.map((pr): Task => ({
+        key: `pr-${r.repo_id}-${pr.number}`, kind: "Pull request", title: pr.title, url: pr.url,
+        source: r.name, opened: pr.opened_at, stale: pr.stale,
+      })),
+    ),
+    ...(incidents.data ?? [])
+      .filter((i) => i.resolved_at === null)
+      .map((i): Task => ({
+        key: `incident-${i.id}`, kind: "Incident", title: i.failure_type, url: null,
+        source: i.app_id, opened: i.started_at, stale: false,
+      })),
+  ];
+  const error = repos.error ?? incidents.error;
+  const refreshing = repos.refreshing || incidents.refreshing;
+  const reloadAll = () => void Promise.all([repos.reload(true), incidents.reload(true)]);
 
   return (
     <>
       <PageHeader
         title="Tasks"
-        description={
-          openPrCount > 0
-            ? `${openPrCount} open pull request${openPrCount === 1 ? "" : "s"} across ${reposWithOpenWork.length} repo${reposWithOpenWork.length === 1 ? "" : "s"}.`
-            : "The open backlog across your tracked repos."
-        }
+        description={`${tasks.length} open item${tasks.length === 1 ? "" : "s"}: pull requests across tracked repos and unresolved incidents.`}
         actions={
-          <button className="refresh-button" type="button" onClick={() => void reload(true)} disabled={refreshing}>
-            <Refresh width={16} height={16} className={refreshing ? "spin" : ""} aria-hidden="true" />
+          <button className="refresh-button" type="button" disabled={refreshing} onClick={reloadAll}>
+            <Refresh width={16} height={16} aria-hidden="true" />
             <span>{refreshing ? "Checking" : "Refresh"}</span>
           </button>
         }
       />
-
       {error ? (
-        <ErrorState message={error} onRetry={() => void reload(true)} retrying={refreshing} />
-      ) : loading ? (
-        <div className="task-groups" aria-label="Loading tasks">
-          {[1, 2].map((item) => <Skeleton height={140} key={item} />)}
-        </div>
-      ) : reposWithOpenWork.length > 0 ? (
-        <div className="task-groups">
-          {reposWithOpenWork.map((item) => (
-            <Card className="task-group" key={item.repo_id}>
-              <div className="tile-kicker">{item.name}</div>
-              <ul className="task-list">
-                {item.open_pull_requests.map((pr) => (
-                  <li className="task-item" key={pr.number}>
-                    {pr.stale && <WarningTriangle width={14} height={14} className="task-stale-icon" aria-hidden="true" />}
-                    <a href={pr.url} target="_blank" rel="noreferrer">
-                      {pr.title}
-                    </a>
-                    <span className="task-meta">
-                      opened {formatOpenedAt(pr.opened_at)}
-                      {pr.stale ? " · stale" : ""}
-                    </span>
-                    <ArrowUpRight width={14} height={14} aria-hidden="true" />
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <EmptyState message="No open pull requests across any tracked repo." />
+        <ErrorState message={error} onRetry={reloadAll} retrying={refreshing} />
+      ) : repos.loading || incidents.loading ? null : (
+        <Table
+          columns={columns}
+          rows={tasks}
+          rowKey={(t) => t.key}
+          searchText={(t) => `${t.title} ${t.source}`}
+          filters={[{ label: "Kind", value: (t) => t.kind }, { label: "Source", value: (t) => t.source }]}
+          emptyMessage="Nothing open."
+        />
       )}
     </>
   );

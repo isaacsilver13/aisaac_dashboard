@@ -15,6 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
 from . import (
+    automations,
     ci_events,
     fly_client,
     health_history,
@@ -266,6 +267,11 @@ def get_runbook(app_id: str) -> str:
 )
 def second_brain_sync(payload: SecondBrainSyncIn) -> None:
     second_brain_store.replace_all(payload.meta, [n.model_dump() for n in payload.notes])
+
+
+@app.get("/api/v1/automations", dependencies=[Depends(_require_read_token)])
+def automations_status() -> list[dict]:
+    return automations.snapshot(settings.health_poll_interval_seconds)
 
 
 @app.get("/api/v1/second-brain/summary", dependencies=[Depends(_require_read_token)])

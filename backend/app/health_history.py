@@ -11,7 +11,7 @@ import sqlite3
 import time
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
-from typing import Any, Iterable, Iterator, Literal
+from typing import Any, Iterable, Iterator, Literal, Optional
 
 from .schemas import CheckResult
 
@@ -101,6 +101,12 @@ def _prune_if_due() -> None:
     cutoff = (datetime.now(timezone.utc) - timedelta(days=_retention_days)).isoformat()
     with _connect() as conn:
         conn.execute("DELETE FROM health_checks WHERE checked_at < ?", (cutoff,))
+
+
+def latest() -> Optional[str]:
+    """Timestamp of the most recent recorded check, any app."""
+    with _connect() as conn:
+        return conn.execute("SELECT MAX(checked_at) FROM health_checks").fetchone()[0]
 
 
 def _p95(values: list[float]) -> float | None:

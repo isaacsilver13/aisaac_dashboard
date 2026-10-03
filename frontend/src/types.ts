@@ -181,3 +181,13 @@ export interface AppLogs {
   fly_app: string | null;
   lines: LogLine[];
 }
+
+export interface AutomationStatus {
+  id: string;
+  name: string;
+  kind: "push" | "event" | "poller";
+  detail: string;
+  last_run_at: string | null;
+  expected_hours: number | null;
+  status: "ok" | "stale" | "never" | "disabled";
+}
