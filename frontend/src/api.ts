@@ -1,4 +1,4 @@
-import type { Deployments, HealthHistory, HistoryRange, AgentSummary, CIEvent, DashboardResponse, FinancialSnapshot, Incident, Note, NoteListItem, RepoActivity, SecondBrainSummary } from "./types";
+import type { AppLogs, Deployments, HealthHistory, HistoryRange, AgentSummary, CIEvent, DashboardResponse, FinancialSnapshot, Incident, Note, NoteListItem, RepoActivity, SecondBrainSummary } from "./types";
 
 export class FinancialsAuthError extends Error {}
 
@@ -120,4 +120,13 @@ export async function fetchDeployments(appId: string, token: string): Promise<De
   if (response.status === 401) throw new FinancialsAuthError("Invalid dashboard token.");
   if (!response.ok) throw new Error(`Deployments request failed with HTTP ${response.status}.`);
   return (await response.json()) as Deployments;
+}
+
+export async function fetchLogs(appId: string, token: string): Promise<AppLogs> {
+  const response = await fetch(`/api/v1/apps/${encodeURIComponent(appId)}/logs`, {
+    headers: { Accept: "application/json", "X-Dashboard-Token": token },
+  });
+  if (response.status === 401) throw new FinancialsAuthError("Invalid dashboard token.");
+  if (!response.ok) throw new Error(`Logs request failed with HTTP ${response.status}.`);
+  return (await response.json()) as AppLogs;
 }
