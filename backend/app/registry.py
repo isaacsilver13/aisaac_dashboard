@@ -68,6 +68,7 @@ _REGISTRY: Mapping[str, tuple[AppDefinition, ...]] = {
     "production": (
         AppDefinition(
             id="vinyl",
+            fly_app="vinyl-catalog",
             name="Vinyl Catalog",
             category="Collection",
             description="Record collection and wantlist management.",
@@ -78,6 +79,7 @@ _REGISTRY: Mapping[str, tuple[AppDefinition, ...]] = {
         ),
         AppDefinition(
             id="nfl-confidence",
+            fly_app="nfl-confidence-web",
             name="NFL Confidence",
             category="Sports",
             description="Weekly NFL confidence picks and league standings.",
@@ -87,6 +89,7 @@ _REGISTRY: Mapping[str, tuple[AppDefinition, ...]] = {
         ),
         AppDefinition(
             id="betting-aggregator",
+            fly_app="betting-aggregator-api",
             name="Betting Aggregator",
             category="Sports",
             description="Odds comparison across supported sports and providers.",
@@ -111,6 +114,7 @@ _REGISTRY: Mapping[str, tuple[AppDefinition, ...]] = {
         ),
         AppDefinition(
             id="gym-tracker",
+            fly_app="isilver-gym-tracker-api",
             name="Gym Tracker",
             category="Health",
             description="Workout routine builder and progress tracker.",
@@ -121,6 +125,7 @@ _REGISTRY: Mapping[str, tuple[AppDefinition, ...]] = {
         ),
         AppDefinition(
             id="portfolio-analysis",
+            fly_app="portfolio-analysis-api",
             name="Portfolio Analysis",
             category="Finance",
             description="Personal brokerage portfolio import, P&L, and SPY-alpha analysis.",

@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     internal_report_secret: str = ""
     stale_report_after_hours: float = 26.0
 
+    # Read-only Fly token for the Deployments tab (`fly tokens create readonly`).
+    fly_api_token: str = ""
+
     github_token: str = ""
     github_cache_ttl_seconds: float = 300.0
 

@@ -152,3 +152,18 @@ export interface HealthHistory {
   };
   points: { t: string; state: HealthState; response_ms: number | null }[];
 }
+
+export interface FlyRelease {
+  version: number;
+  status: string;
+  description: string;
+  reason: string;
+  createdAt: string;
+  imageRef: string;
+}
+
+export interface Deployments {
+  app_id: string;
+  fly_app: string | null;
+  releases: FlyRelease[];
+}
