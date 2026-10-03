@@ -1,5 +1,6 @@
 import { NavLink, Navigate, useLocation, useParams } from "react-router-dom";
 
+import { DeploymentsTab } from "../components/application/DeploymentsTab";
 import { OverviewTab } from "../components/application/OverviewTab";
 import { HealthTab } from "../components/application/HealthTab";
 import { EmptyState } from "../components/primitives/EmptyState";
@@ -32,6 +33,8 @@ export function ApplicationPage() {
       </nav>
       {tab === "health" && appId ? (
         <HealthTab appId={appId} />
+      ) : tab === "deployments" && appId ? (
+        <DeploymentsTab appId={appId} />
       ) : tab === "overview" && appId ? (
         <OverviewTab appId={appId} />
       ) : (
