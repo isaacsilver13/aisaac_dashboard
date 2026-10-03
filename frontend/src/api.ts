@@ -1,4 +1,4 @@
-import type { HealthHistory, HistoryRange, AgentSummary, CIEvent, DashboardResponse, FinancialSnapshot, Incident, Note, NoteListItem, RepoActivity, SecondBrainSummary } from "./types";
+import type { Deployments, HealthHistory, HistoryRange, AgentSummary, CIEvent, DashboardResponse, FinancialSnapshot, Incident, Note, NoteListItem, RepoActivity, SecondBrainSummary } from "./types";
 
 export class FinancialsAuthError extends Error {}
 
@@ -111,4 +111,13 @@ export async function fetchHealthHistory(appId: string, range: HistoryRange): Pr
   });
   if (!response.ok) throw new Error(`Health history request failed with HTTP ${response.status}.`);
   return (await response.json()) as HealthHistory;
+}
+
+export async function fetchDeployments(appId: string, token: string): Promise<Deployments> {
+  const response = await fetch(`/api/v1/apps/${encodeURIComponent(appId)}/deployments`, {
+    headers: { Accept: "application/json", "X-Dashboard-Token": token },
+  });
+  if (response.status === 401) throw new FinancialsAuthError("Invalid dashboard token.");
+  if (!response.ok) throw new Error(`Deployments request failed with HTTP ${response.status}.`);
+  return (await response.json()) as Deployments;
 }
