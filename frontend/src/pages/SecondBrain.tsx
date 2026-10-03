@@ -7,14 +7,24 @@ import { linkWikilinks, obsidianUrl } from "../components/dashboard/secondBrain"
 import { Card } from "../components/primitives/Card";
 import { EmptyState } from "../components/primitives/EmptyState";
 import { PageHeader } from "../components/primitives/PageHeader";
+import { Table, type Column } from "../components/primitives/Table";
 import { readToken, writeToken } from "../token";
 import type { Note, NoteListItem } from "../types";
+
+const noteColumns: Column<NoteListItem>[] = [
+  {
+    key: "title",
+    header: "Title",
+    sortValue: (n) => n.title,
+    render: (n) => <Link to={`?note=${encodeURIComponent(n.path)}`}>{n.title}</Link>,
+  },
+  { key: "folder", header: "Folder", sortValue: (n) => n.folder, render: (n) => n.folder },
+  { key: "status", header: "Status", sortValue: (n) => n.status, render: (n) => n.status ?? "—" },
+];
 
 export default function SecondBrain() {
   const [token, setToken] = useState(readToken);
   const [draft, setDraft] = useState("");
-  const [query, setQuery] = useState("");
-  const [notes, setNotes] = useState<NoteListItem[]>([]);
   const [all, setAll] = useState<NoteListItem[]>([]);
   const [note, setNote] = useState<Note | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -34,23 +44,11 @@ export default function SecondBrain() {
     if (token) fetchNotes(token).then(setAll).catch(fail);
   }, [token]);
   useEffect(() => {
-    if (token) fetchNotes(token, query).then(setNotes).catch(fail);
-  }, [token, query]);
-  useEffect(() => {
     if (token && path) fetchNote(token, path).then(setNote).catch(fail);
   }, [token, path]);
 
   const shown = note && note.path === path ? note : null;
   const body = useMemo(() => (shown ? linkWikilinks(shown.body, all) : ""), [shown, all]);
-  const grouped = useMemo(() => {
-    const out = new Map<string, NoteListItem[]>();
-    for (const n of notes) {
-      const key = n.folder === "wikis" ? n.path.split("/")[1] : n.folder;
-      out.set(key, [...(out.get(key) ?? []), n]);
-    }
-    return [...out.entries()];
-  }, [notes]);
-
   function submit(event: FormEvent) {
     event.preventDefault();
     if (!draft.trim()) return;
@@ -76,47 +74,31 @@ export default function SecondBrain() {
     <>
       <PageHeader title="Second Brain" description="Read-only copy of the Obsidian vault. Edit notes in Obsidian, then push." />
       {error && <EmptyState message={error} />}
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(200px, 280px) 1fr", gap: 16 }}>
-        <aside aria-label="Notes">
-          <input
-            type="search"
-            placeholder="Search notes"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            style={{ width: "100%", marginBottom: 12 }}
-          />
-          {grouped.map(([group, items]) => (
-            <section key={group}>
-              <h3 className="ui-stat-label">{group}</h3>
-              <ul className="cost-by-app">
-                {items.map((n) => (
-                  <li key={n.path}>
-                    <Link to={`?note=${encodeURIComponent(n.path)}`}>{n.title}</Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
-          {notes.length === 0 && <EmptyState message="No notes. Run scripts/second_brain_push.py." />}
-        </aside>
-        <article aria-label="Note">
-          {shown ? (
-            <Card>
-              <a className="ui-stat-label" href={obsidianUrl(shown.path)}>Open in Obsidian</a>
-              <Markdown
-                components={{
-                  a: ({ href, children }) =>
-                    href?.startsWith("?note=") ? <Link to={href}>{children}</Link> : <a href={href}>{children}</a>,
-                }}
-              >
-                {body}
-              </Markdown>
-            </Card>
-          ) : (
-            <EmptyState message="Pick a note." />
-          )}
-        </article>
-      </div>
+      {shown ? (
+        <>
+          <Link className="ui-stat-label" to="/knowledge">← All notes</Link>
+          <Card>
+            <a className="ui-stat-label" href={obsidianUrl(shown.path)}>Open in Obsidian</a>
+            <Markdown
+              components={{
+                a: ({ href, children }) =>
+                  href?.startsWith("?note=") ? <Link to={href}>{children}</Link> : <a href={href}>{children}</a>,
+              }}
+            >
+              {body}
+            </Markdown>
+          </Card>
+        </>
+      ) : (
+        <Table
+          columns={noteColumns}
+          rows={all}
+          rowKey={(n) => n.path}
+          searchText={(n) => `${n.title} ${n.path} ${n.aliases.join(" ")}`}
+          filters={[{ label: "Folder", value: (n) => n.folder }]}
+          emptyMessage="No notes. Run scripts/second_brain_push.py."
+        />
+      )}
     </>
   );
 }
