@@ -1,4 +1,4 @@
-import type { AppLogs, Deployments, HealthHistory, HistoryRange, AgentSummary, CIEvent, DashboardResponse, FinancialSnapshot, Incident, Note, NoteListItem, RepoActivity, SecondBrainSummary } from "./types";
+import type { AutomationStatus, AppLogs, Deployments, HealthHistory, HistoryRange, AgentSummary, CIEvent, DashboardResponse, FinancialSnapshot, Incident, Note, NoteListItem, RepoActivity, SecondBrainSummary } from "./types";
 
 export class FinancialsAuthError extends Error {}
 
@@ -129,4 +129,13 @@ export async function fetchLogs(appId: string, token: string): Promise<AppLogs> 
   if (response.status === 401) throw new FinancialsAuthError("Invalid dashboard token.");
   if (!response.ok) throw new Error(`Logs request failed with HTTP ${response.status}.`);
   return (await response.json()) as AppLogs;
+}
+
+export async function fetchAutomations(token: string): Promise<AutomationStatus[]> {
+  const response = await fetch("/api/v1/automations", {
+    headers: { Accept: "application/json", "X-Dashboard-Token": token },
+  });
+  if (response.status === 401) throw new FinancialsAuthError("Invalid dashboard token.");
+  if (!response.ok) throw new Error(`Automations request failed with HTTP ${response.status}.`);
+  return (await response.json()) as AutomationStatus[];
 }

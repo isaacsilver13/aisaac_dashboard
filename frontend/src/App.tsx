@@ -1,6 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 
 import { AppShell } from "./components/layout/AppShell";
+import Automations from "./pages/Automations";
 import Agents from "./pages/Agents";
 import Analytics from "./pages/Analytics";
 import CommandCenter from "./pages/CommandCenter";
@@ -21,7 +22,7 @@ export default function App() {
         <Route path="/github/repositories" element={<ComingSoon title="Repositories" />} />
         <Route path="/github/repositories/:repo" element={<ComingSoon title="Repository" />} />
         <Route path="/tasks" element={<Tasks />} />
-        <Route path="/automations" element={<ComingSoon title="Automations" />} />
+        <Route path="/automations" element={<Automations />} />
         <Route path="/knowledge" element={<SecondBrain />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/second-brain" element={<RedirectKeepSearch to="/knowledge" />} />
