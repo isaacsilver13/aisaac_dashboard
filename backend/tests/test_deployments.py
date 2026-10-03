@@ -56,3 +56,21 @@ def test_fly_failure_is_502(monkeypatch):
 
     monkeypatch.setattr(fly_client, "releases", boom)
     assert _get("vinyl").status_code == 502
+
+
+def test_logs_endpoint_and_auth_scheme(monkeypatch):
+    async def fake(client, token, app):
+        return [{"timestamp": "t", "level": "info", "message": "hi", "instance": "i"}]
+
+    monkeypatch.setattr(fly_client, "logs", fake)
+    async def run(path):
+        transport = httpx.ASGITransport(app=main.app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
+            return await c.get(path, headers={"X-Dashboard-Token": "read"})
+
+    body = asyncio.run(run("/api/v1/apps/vinyl/logs")).json()
+    assert body["fly_app"] == "vinyl-catalog" and body["lines"][0]["message"] == "hi"
+    assert asyncio.run(run("/api/v1/apps/nba-prediction/logs")).json()["lines"] == []
+    assert fly_client._auth("fm2_x") == "FlyV1 fm2_x"
+    assert fly_client._auth("FlyV1 fm2_x") == "FlyV1 fm2_x"
+    assert fly_client._auth("abc") == "Bearer abc"

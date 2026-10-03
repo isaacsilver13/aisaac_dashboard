@@ -167,3 +167,17 @@ export interface Deployments {
   fly_app: string | null;
   releases: FlyRelease[];
 }
+
+export interface LogLine {
+  timestamp: string | null;
+  level: string | null;
+  message: string | null;
+  instance: string | null;
+  region: string | null;
+}
+
+export interface AppLogs {
+  app_id: string;
+  fly_app: string | null;
+  lines: LogLine[];
+}
