@@ -46,14 +46,14 @@ _PRUNE_EVERY_SECONDS = 3600
 
 _db_path: str = "./aisaac_health.db"
 _retention_days: float = 30.0
-_last_prune: float = 0.0
+_last_prune: float = float("-inf")
 
 
 def configure(db_path: str, retention_days: float = 30.0) -> None:
     global _db_path, _retention_days, _last_prune
     _db_path = db_path
     _retention_days = retention_days
-    _last_prune = 0.0
+    _last_prune = float("-inf")
     with _connect() as conn:
         conn.executescript(_SCHEMA)
 
