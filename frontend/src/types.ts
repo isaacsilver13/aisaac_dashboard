@@ -115,3 +115,24 @@ export interface FinancialSnapshot {
   fly: ProviderCost | null;
   detail: string | null;
 }
+
+export interface SecondBrainSummary {
+  counts: Record<string, number>;
+  pushed_at: string | null;
+  last_commit?: string;
+  drafts?: number;
+  broken_links?: number;
+  wiki_topics?: string[];
+}
+
+export interface NoteListItem {
+  path: string;
+  folder: string;
+  title: string;
+  aliases: string[];
+  status: string | null;
+}
+
+export interface Note extends NoteListItem {
+  body: string;
+}

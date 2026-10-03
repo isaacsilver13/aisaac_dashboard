@@ -3,6 +3,7 @@
 Configuration comes from env vars or ~/.claude/aisaac_push.json (same keys):
     AISAAC_DASHBOARD_URL      e.g. https://aisaac-dashboard.fly.dev
     AISAAC_INTERNAL_SECRET    the dashboard's INTERNAL_REPORT_SECRET
+    SECOND_BRAIN_PATH         vault folder for second_brain_push.py (default ~/second-brain)
 """
 
 from __future__ import annotations
@@ -14,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 CONFIG_FILE = Path.home() / ".claude" / "aisaac_push.json"
-CONFIG_KEYS = ("AISAAC_DASHBOARD_URL", "AISAAC_INTERNAL_SECRET")
+CONFIG_KEYS = ("AISAAC_DASHBOARD_URL", "AISAAC_INTERNAL_SECRET", "SECOND_BRAIN_PATH")
 
 
 def load_config() -> dict[str, str]:
@@ -29,15 +30,18 @@ def load_config() -> dict[str, str]:
     return config
 
 
-def post_metrics(
-    source: str, payload: dict[str, Any], config: dict[str, str], timeout: float = 10
+def post_json(
+    path: str, payload: dict[str, Any], config: dict[str, str], timeout: float = 10
 ) -> bool:
-    """POST a snapshot to /internal/metrics/{source}. Returns False (never raises) on failure."""
-    url, secret = config.get("AISAAC_DASHBOARD_URL"), config.get("AISAAC_INTERNAL_SECRET")
+    """POST JSON to an /internal path. Returns False (never raises) on failure."""
+    url, secret = (
+        config.get("AISAAC_DASHBOARD_URL"),
+        config.get("AISAAC_INTERNAL_SECRET"),
+    )
     if not url or not secret:
         return False
     request = urllib.request.Request(
-        f"{url.rstrip('/')}/internal/metrics/{source}",
+        f"{url.rstrip('/')}{path}",
         data=json.dumps(payload).encode(),
         headers={"Content-Type": "application/json", "X-Internal-Secret": secret},
         method="POST",
@@ -47,3 +51,10 @@ def post_metrics(
             return True
     except Exception:
         return False
+
+
+def post_metrics(
+    source: str, payload: dict[str, Any], config: dict[str, str], timeout: float = 10
+) -> bool:
+    """POST a snapshot to /internal/metrics/{source}. Returns False (never raises) on failure."""
+    return post_json(f"/internal/metrics/{source}", payload, config, timeout)

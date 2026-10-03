@@ -199,3 +199,19 @@ class FinancialSnapshot(BaseModel):
     neon: Optional[NeonUsageOut] = None
     fly: Optional[ProviderCostOut] = None
     detail: Optional[str] = None
+
+
+class NoteIn(BaseModel):
+    path: str = Field(pattern=r"^(wikis|knowledge|projects|questions)/.+\.md$")
+    folder: str
+    title: str
+    aliases: list[str] = []
+    status: Optional[str] = None
+    body: str
+
+
+class SecondBrainSyncIn(BaseModel):
+    """Whole-vault sync. `meta` holds card figures (last commit, drafts, broken links)."""
+
+    meta: dict[str, Any] = {}
+    notes: list[NoteIn]

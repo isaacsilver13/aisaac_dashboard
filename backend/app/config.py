@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     metrics_db_path: str = "./aisaac_metrics.db"
     dashboard_read_token: str = ""
 
+    # Second-brain vault notes pushed by scripts/second_brain_push.py (read-token gated).
+    second_brain_db_path: str = "./aisaac_second_brain.db"
+
 
 @lru_cache
 def get_settings() -> Settings:

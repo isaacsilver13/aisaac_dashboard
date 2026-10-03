@@ -1,4 +1,4 @@
-import type { AgentSummary, CIEvent, DashboardResponse, FinancialSnapshot, Incident, RepoActivity } from "./types";
+import type { AgentSummary, CIEvent, DashboardResponse, FinancialSnapshot, Incident, Note, NoteListItem, RepoActivity, SecondBrainSummary } from "./types";
 
 export class FinancialsAuthError extends Error {}
 
@@ -83,3 +83,24 @@ export async function fetchRunbook(appId: string): Promise<string | null> {
   }
   return response.text();
 }
+
+async function secondBrainGet<T>(path: string, token: string): Promise<T> {
+  const response = await fetch(`/api/v1/second-brain/${path}`, {
+    headers: { Accept: "application/json", "X-Dashboard-Token": token },
+  });
+  if (response.status === 401) throw new FinancialsAuthError("Invalid dashboard token.");
+  if (!response.ok) throw new Error(`Second brain request failed with HTTP ${response.status}.`);
+  return (await response.json()) as T;
+}
+
+export const fetchSecondBrainSummary = (token: string) =>
+  secondBrainGet<SecondBrainSummary>("summary", token);
+
+export const fetchNotes = (token: string, q = "", folder = "") =>
+  secondBrainGet<NoteListItem[]>(
+    `notes?q=${encodeURIComponent(q)}&folder=${encodeURIComponent(folder)}`,
+    token,
+  );
+
+export const fetchNote = (token: string, path: string) =>
+  secondBrainGet<Note>(`notes/${path.split("/").map(encodeURIComponent).join("/")}`, token);

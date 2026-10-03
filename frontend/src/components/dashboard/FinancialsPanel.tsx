@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 
 import { FinancialsAuthError, fetchFinancials } from "../../api";
+import { readToken, writeToken } from "../../token";
 import type { ClaudeUsage, FinancialSnapshot, NeonUsage, ProviderCost, UsageWindow } from "../../types";
 import { Badge } from "../primitives/Badge";
 import { Card } from "../primitives/Card";
@@ -17,25 +18,6 @@ import {
   isStale,
   usageTone,
 } from "./financials";
-
-const TOKEN_KEY = "aisaac.dashboardToken";
-
-function readToken(): string {
-  try {
-    return window.localStorage.getItem(TOKEN_KEY) ?? "";
-  } catch {
-    return "";
-  }
-}
-
-function writeToken(value: string): void {
-  try {
-    if (value) window.localStorage.setItem(TOKEN_KEY, value);
-    else window.localStorage.removeItem(TOKEN_KEY);
-  } catch {
-    // Storage can be blocked; the token then lasts for this page view only.
-  }
-}
 
 function UsageMeter({ label, window: win, stale }: { label: string; window: UsageWindow; stale: boolean }) {
   const tone = usageTone(win.used_pct);

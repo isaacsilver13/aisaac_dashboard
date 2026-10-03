@@ -5,6 +5,7 @@ import Agents from "./pages/Agents";
 import Analytics from "./pages/Analytics";
 import CommandCenter from "./pages/CommandCenter";
 import Coms from "./pages/Coms";
+import SecondBrain from "./pages/SecondBrain";
 import Tasks from "./pages/Tasks";
 
 export default function App() {
@@ -17,9 +18,10 @@ export default function App() {
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/tasks" element={<Tasks />} />
         <Route path="/coms" element={<Coms />} />
+        <Route path="/second-brain" element={<SecondBrain />} />
       </Routes>
       <footer className="footer-note">
-        <span>Server-side checks / no private data</span>
+        <span>Server-side checks / private data only behind the dashboard token (usage figures, second-brain notes)</span>
         <span>AIsaac Dashboard v0.1</span>
       </footer>
     </AppShell>
