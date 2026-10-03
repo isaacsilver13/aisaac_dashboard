@@ -9,6 +9,38 @@ A standalone links and health dashboard for Isaac's applications.
 
 The monitor checks configured public endpoints server-side. It does not access another application's database, local artifacts, authenticated data, or user financial data.
 
+## Pages
+
+| Route | What it shows |
+|---|---|
+| `/` | Overview: system status, attention items, activity, financials, second-brain summary. |
+| `/applications/:id/{overview,health,deployments,data,logs}` | Per-app tabs. Health has uptime, latency and state history; Deployments and Logs read Fly; Data shows reported metrics and their history. |
+| `/github`, `/github/repositories[/:repo]` | Repo activity, repository list and per-repo detail. |
+| `/tasks` | Open pull requests and unresolved incidents. |
+| `/automations` | Last run and staleness of push jobs and background tasks (observed, not scheduled). |
+| `/knowledge` | Second-brain notes (token-gated). |
+| `/settings` | Dashboard token, backend configuration status, theme. |
+
+Light and dark themes (tokens in `frontend/src/theme/theme.css`), Iconoir icons, and Motion transitions that respect `prefers-reduced-motion`.
+
+## Configuration
+
+Backend settings come from environment variables (`backend/app/config.py`). Secrets on Fly: `fly secrets set NAME=... -a aisaac-dashboard`. **Settings > Backend configuration** shows which of these are set, never their values.
+
+| Variable | Enables |
+|---|---|
+| `DASHBOARD_READ_TOKEN` | Knowledge, financials, deployments, logs, automations, config status (sent as `X-Dashboard-Token`). |
+| `INTERNAL_REPORT_SECRET` | Push jobs and heartbeats (`/internal/*`). |
+| `FLY_API_TOKEN` | Deployments and Logs tabs. Read-only org token: `fly tokens create readonly personal`. |
+| `GITHUB_TOKEN` | Repo, PR and CI data. |
+| `RESEND_API_KEY`, `ALERT_TO_EMAIL` | Email alerts. |
+| `NTFY_TOPIC` | CI push notifications. |
+| `HEALTH_POLL_INTERVAL_SECONDS` | Optional in-process poller (default 0 = off). |
+
+## History
+
+Every fresh health check is stored (status, latency, numeric metrics) in SQLite on the Fly volume (`HEALTH_DB_PATH`, 30 days). History accrues only while something checks the apps: someone viewing the dashboard, or the optional poller. Fly machines auto-stop, so expect gaps.
+
 ## Local development
 
 ```powershell

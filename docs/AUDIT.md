@@ -1,3 +1,5 @@
+> **Status (2026-10-03):** this is the Phase 0 snapshot taken before the redesign. Since then the theme/Iconoir/sidebar/Table foundation, health history, all five application tabs, Settings, Automations, Tasks, GitHub detail and Motion have shipped (PRs #5-#16). Gaps and risks below that are not mentioned in the README or CLAUDE.md should be re-checked before relying on them.
+
 # AIsaac Dashboard — Phase 0 Audit (2026-10-03, master @ 8bb1656)
 
 Source: code-only read (no live Fly/GitHub checks). Backend details come from a subagent read; spot-verify before relying on a specific line.
