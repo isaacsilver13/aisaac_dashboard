@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { NavLink } from "react-router-dom";
 import { Activity, NavArrowDown, NavArrowRight, SidebarCollapse, SidebarExpand } from "iconoir-react";
 
@@ -56,15 +57,24 @@ export function Sidebar({ status, apps, collapsed, onToggleCollapsed }: SidebarP
                 </button>
               )}
             </div>
-            {item.hasApps && appsOpen && !collapsed && (
-              <div className="app-sidebar-sub">
-                {apps.map((app) => (
-                  <NavLink key={app.id} to={`/applications/${app.id}/overview`} className={linkClass}>
-                    <span>{app.name}</span>
-                  </NavLink>
-                ))}
-              </div>
-            )}
+            <AnimatePresence initial={false}>
+              {item.hasApps && appsOpen && !collapsed && (
+                <motion.div
+                  className="app-sidebar-sub"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  style={{ overflow: "hidden" }}
+                >
+                  {apps.map((app) => (
+                    <NavLink key={app.id} to={`/applications/${app.id}/overview`} className={linkClass}>
+                      <span>{app.name}</span>
+                    </NavLink>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         ))}
       </nav>

@@ -1,4 +1,6 @@
+import { motion } from "motion/react";
 import { useState, type ReactNode } from "react";
+import { useLocation } from "react-router-dom";
 
 import { fetchDashboard } from "../../api";
 import { useAsyncData } from "../../hooks/useAsyncData";
@@ -31,6 +33,7 @@ function summarizeSystemStatus(
 
 export function AppShell({ children }: AppShellProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const section = useLocation().pathname.split("/")[1];
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem("aisaac-sidebar") === "collapsed");
   const { data, loading, error } = useAsyncData(fetchDashboard);
   const status = summarizeSystemStatus(loading, error, data?.results);
@@ -48,7 +51,16 @@ export function AppShell({ children }: AppShellProps) {
       />
       <MobileTopBar status={status} onOpenMenu={() => setDrawerOpen(true)} />
       <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
-      <main className="app-main">{children}</main>
+      {/* Keyed by top-level section so tab changes inside a page do not remount it. */}
+      <motion.main
+        key={section}
+        className="app-main"
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.15, ease: "easeOut" }}
+      >
+        {children}
+      </motion.main>
     </div>
   );
 }
