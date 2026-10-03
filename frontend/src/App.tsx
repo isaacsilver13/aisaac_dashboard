@@ -9,6 +9,8 @@ import Coms from "./pages/Coms";
 import SecondBrain from "./pages/SecondBrain";
 import { ApplicationPage, ComingSoon, NotFound, RedirectKeepSearch } from "./pages/stubs";
 import Settings from "./pages/Settings";
+import Repositories from "./pages/Repositories";
+import RepositoryDetail from "./pages/RepositoryDetail";
 import Tasks from "./pages/Tasks";
 
 export default function App() {
@@ -19,8 +21,8 @@ export default function App() {
         <Route path="/applications" element={<ComingSoon title="Applications" />} />
         <Route path="/applications/:appId/:tab" element={<ApplicationPage />} />
         <Route path="/github" element={<Analytics />} />
-        <Route path="/github/repositories" element={<ComingSoon title="Repositories" />} />
-        <Route path="/github/repositories/:repo" element={<ComingSoon title="Repository" />} />
+        <Route path="/github/repositories" element={<Repositories />} />
+        <Route path="/github/repositories/:repo" element={<RepositoryDetail />} />
         <Route path="/tasks" element={<Tasks />} />
         <Route path="/automations" element={<Automations />} />
         <Route path="/knowledge" element={<SecondBrain />} />

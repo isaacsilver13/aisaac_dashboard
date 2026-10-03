@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import type { RepoActivity } from "../types";
 import { CiStatusBadge } from "./CiStatusBadge";
 import type { Column, TableFilter } from "./primitives/Table";
@@ -14,7 +16,7 @@ export const repoColumns: Column<RepoActivity>[] = [
     sortValue: (r) => r.name,
     render: (r) => (
       <>
-        <div className="repo-cell-name">{r.name}</div>
+        <Link className="repo-cell-name" to={`/github/repositories/${r.repo_id}`}>{r.name}</Link>
         <div className="repo-cell-path">{r.owner}/{r.repo}</div>
         {r.detail && <div className="repo-cell-detail">{r.detail}</div>}
       </>
