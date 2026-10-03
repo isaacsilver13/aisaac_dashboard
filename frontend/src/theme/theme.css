@@ -1,0 +1,53 @@
+/*
+ * Single source of truth for design tokens (see docs/AUDIT.md).
+ * Light is the default; dark applies via [data-theme="dark"], which
+ * useTheme sets (system preference on first visit, then persisted).
+ */
+:root {
+  color-scheme: light;
+  --bg: #fafafa;
+  --sidebar: #f7f7f8;
+  --surface: #ffffff;
+  --subtle: #f4f4f5;
+  --border: #e4e4e7;
+  --border-strong: #d4d4d8;
+  --hover: rgba(24, 24, 27, 0.05);
+
+  --text: #18181b;
+  --text-muted: #71717a;
+  --accent: #2563eb;
+
+  --success: #16a34a;
+  --warning: #d97706;
+  --error: #dc2626;
+  --info: #2563eb;
+  --neutral: #71717a;
+
+  --font-sans: "Inter Variable", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 8px;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #09090b;
+  --sidebar: #0f0f11;
+  --surface: #141416;
+  --subtle: #18181b;
+  --border: #27272a;
+  --border-strong: #3f3f46;
+  --hover: rgba(250, 250, 250, 0.06);
+
+  --text: #fafafa;
+  --text-muted: #a1a1aa;
+  --accent: #818cf8;
+
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --error: #f87171;
+  --info: #60a5fa;
+  --neutral: #a1a1aa;
+}

@@ -11,7 +11,6 @@ import Tasks from "./pages/Tasks";
 export default function App() {
   return (
     <AppShell>
-      <div className="ambient-grid" aria-hidden="true" />
       <Routes>
         <Route path="/" element={<CommandCenter />} />
         <Route path="/agents" element={<Agents />} />

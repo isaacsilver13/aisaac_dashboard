@@ -4,6 +4,7 @@ import { Activity } from "lucide-react";
 import { StatusDot } from "../primitives/StatusDot";
 import type { Tone } from "../primitives/tone";
 import { NAV_ITEMS } from "./navItems";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface SystemStatusSummary {
   label: string;
@@ -39,6 +40,7 @@ export function Sidebar({ status, onNavigate }: SidebarProps) {
       <div className="app-sidebar-status">
         <StatusDot tone={status.tone} label={status.label} />
         <span>{status.label}</span>
+        <ThemeToggle />
       </div>
     </aside>
   );
