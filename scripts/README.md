@@ -39,3 +39,11 @@ The total is remembered for the month, so a scheduled `python scripts/push_fly_c
 estimates fresh. Any gap between the estimates and the invoice shows as `(unattributed)`.
 Autostopped machines have little event history, so compute is undercounted; expect most of the
 invoice to land in `(unattributed)` until you refine the estimate.
+
+## second_brain_push.py
+
+Syncs the Obsidian vault (`wikis/`, `knowledge/`, `projects/`, `questions/`) to the dashboard's Second Brain page and Command Center card. Vault path: `SECOND_BRAIN_PATH` (default `~/second-brain`). It aborts if any note holds a credential-shaped string. Run after committing vault changes:
+
+    python scripts/second_brain_push.py [--dry-run]
+
+Reads need the same dashboard token as the financials panel.

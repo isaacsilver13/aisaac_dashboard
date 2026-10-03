@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
-from . import ci_events, incidents, metrics_store, notify, reports
+from . import ci_events, incidents, metrics_store, notify, reports, second_brain_store
 from .agents_registry import get_agents
 from .config import get_settings
 from .github_monitor import GitHubMonitor
@@ -33,12 +33,14 @@ from .schemas import (
     PushReportIn,
     RepoActivity,
     ResolveIncidentIn,
+    SecondBrainSyncIn,
 )
 
 settings = get_settings()
 incidents.configure(settings.incidents_db_path)
 ci_events.configure(settings.ci_events_db_path)
 metrics_store.configure(settings.metrics_db_path)
+second_brain_store.configure(settings.second_brain_db_path)
 _last_notified_at: dict[str, float] = {}
 monitor = Monitor(cache_ttl_seconds=settings.cache_ttl_seconds, settings=settings)
 github_monitor = GitHubMonitor(
@@ -183,6 +185,33 @@ def get_runbook(app_id: str) -> str:
     if not runbook_path.is_file():
         raise HTTPException(404, "No runbook has been written for this app yet.")
     return runbook_path.read_text(encoding="utf-8")
+
+
+@app.post(
+    "/internal/second-brain/sync",
+    status_code=204,
+    dependencies=[Depends(_require_internal_secret)],
+)
+def second_brain_sync(payload: SecondBrainSyncIn) -> None:
+    second_brain_store.replace_all(payload.meta, [n.model_dump() for n in payload.notes])
+
+
+@app.get("/api/v1/second-brain/summary", dependencies=[Depends(_require_read_token)])
+def second_brain_summary() -> dict:
+    return second_brain_store.summary() or {"counts": {}, "pushed_at": None}
+
+
+@app.get("/api/v1/second-brain/notes", dependencies=[Depends(_require_read_token)])
+def second_brain_notes(q: str = "", folder: str = "") -> list[dict]:
+    return second_brain_store.list_notes(q, folder)
+
+
+@app.get("/api/v1/second-brain/notes/{path:path}", dependencies=[Depends(_require_read_token)])
+def second_brain_note(path: str) -> dict:
+    note = second_brain_store.get_note(path)
+    if note is None:
+        raise HTTPException(404, "No such note.")
+    return note
 
 
 frontend_dist = Path(settings.frontend_dist).resolve()
