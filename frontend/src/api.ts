@@ -1,4 +1,4 @@
-import type { AgentSummary, CIEvent, DashboardResponse, FinancialSnapshot, Incident, Note, NoteListItem, RepoActivity, SecondBrainSummary } from "./types";
+import type { HealthHistory, HistoryRange, AgentSummary, CIEvent, DashboardResponse, FinancialSnapshot, Incident, Note, NoteListItem, RepoActivity, SecondBrainSummary } from "./types";
 
 export class FinancialsAuthError extends Error {}
 
@@ -104,3 +104,11 @@ export const fetchNotes = (token: string, q = "", folder = "") =>
 
 export const fetchNote = (token: string, path: string) =>
   secondBrainGet<Note>(`notes/${path.split("/").map(encodeURIComponent).join("/")}`, token);
+
+export async function fetchHealthHistory(appId: string, range: HistoryRange): Promise<HealthHistory> {
+  const response = await fetch(`/api/v1/apps/${encodeURIComponent(appId)}/health-history?range=${range}`, {
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) throw new Error(`Health history request failed with HTTP ${response.status}.`);
+  return (await response.json()) as HealthHistory;
+}

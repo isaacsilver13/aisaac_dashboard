@@ -1,6 +1,9 @@
+import asyncio
 import hmac
 import json
+import logging
 import time
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -10,7 +13,15 @@ from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
-from . import ci_events, incidents, metrics_store, notify, reports, second_brain_store
+from . import (
+    ci_events,
+    health_history,
+    incidents,
+    metrics_store,
+    notify,
+    reports,
+    second_brain_store,
+)
 from .agents_registry import get_agents
 from .config import get_settings
 from .github_monitor import GitHubMonitor
@@ -41,12 +52,32 @@ incidents.configure(settings.incidents_db_path)
 ci_events.configure(settings.ci_events_db_path)
 metrics_store.configure(settings.metrics_db_path)
 second_brain_store.configure(settings.second_brain_db_path)
+health_history.configure(settings.health_db_path, settings.health_retention_days)
 _last_notified_at: dict[str, float] = {}
 monitor = Monitor(cache_ttl_seconds=settings.cache_ttl_seconds, settings=settings)
 github_monitor = GitHubMonitor(
     token=settings.github_token, cache_ttl_seconds=settings.github_cache_ttl_seconds
 )
-app = FastAPI(title="AIsaac Dashboard", version="0.1.0")
+async def _poll_health(interval: float) -> None:
+    while True:
+        try:
+            await monitor.dashboard(get_registry(settings.profile), force_refresh=True)
+        except Exception:
+            logging.getLogger("aisaac.monitoring").exception("Health poll failed")
+        await asyncio.sleep(interval)
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    poller = None
+    if settings.health_poll_interval_seconds > 0:
+        poller = asyncio.create_task(_poll_health(settings.health_poll_interval_seconds))
+    yield
+    if poller:
+        poller.cancel()
+
+
+app = FastAPI(title="AIsaac Dashboard", version="0.1.0", lifespan=lifespan)
 
 
 @app.get("/health")
@@ -63,6 +94,15 @@ async def dashboard(force_refresh: bool = Query(default=False)) -> DashboardResp
         refreshed_at=datetime.now(timezone.utc),
         results=results,
     )
+
+
+@app.get("/api/v1/apps/{app_id}/health-history")
+def app_health_history(
+    app_id: str, range: health_history.Range = Query(default="24h")
+) -> dict:
+    if app_id not in {a.id for a in get_registry(settings.profile)}:
+        raise HTTPException(404, "Unknown application.")
+    return health_history.history(app_id, range)
 
 
 def _require_internal_secret(x_internal_secret: Optional[str] = Header(default=None)) -> None:
