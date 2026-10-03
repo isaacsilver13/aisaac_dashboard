@@ -119,3 +119,16 @@ def test_load_config_accepts_powershell_utf8_bom(tmp_path, monkeypatch):
     monkeypatch.setattr(push_common, "CONFIG_FILE", config_file)
     monkeypatch.delenv("AISAAC_DASHBOARD_URL", raising=False)
     assert push_common.load_config()["AISAAC_DASHBOARD_URL"] == "https://x.example"
+
+
+def test_split_invoice_allocates_by_weight_and_keeps_total():
+    payload = fly.split_invoice({"a": 1.0, "b": 3.0, "idle": 0.0}, "2026-09", 8.0)
+    assert payload["by_app"] == {"a": 2.0, "b": 6.0}
+    assert payload["total_usd"] == 8.0
+    assert fly.split_invoice({"a": 0.0}, "2026-09", 5.0)["by_app"] == {"(unattributed)": 5.0}
+
+
+def test_neon_counter_fallback_reads_cpu_used_sec():
+    projects = [{"id": "p1", "cpu_used_sec": 7200}, {"id": "p2", "cpu_used_sec": None},
+                {"id": "p3"}]
+    assert neon.counter_seconds(projects) == {"p1": 7200.0, "p2": 0.0, "p3": 0.0}

@@ -3,11 +3,12 @@
 Neon's API reports usage, not dollars, so this pushes compute hours only. Needs
 a Neon API key with read access: NEON_API_KEY (and NEON_ORG_ID for org projects).
 
-Tries the v2 consumption endpoint first (Launch plans and above), then falls
-back to the legacy endpoint (Free / legacy plans). Compute hours are
+Tries the v2 consumption endpoint first (Launch plans and above), then the legacy
+one (Scale and above), then the project list's `cpu_used_sec` counters (any plan,
+current period only). Compute hours are
 compute-unit seconds / 3600 (v2) or `compute_time_seconds` / 3600 (legacy).
 
-    python scripts/push_neon_usage.py [--dry-run]
+    python scripts/push_neon_usage.py [--month 2026-09] [--dry-run]
 """
 
 from __future__ import annotations
@@ -19,7 +20,7 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -34,8 +35,13 @@ def _get(path: str, params: dict[str, Any], key: str) -> dict[str, Any]:
         f"{API}{path}?{query}",
         headers={"Authorization": f"Bearer {key}", "Accept": "application/json"},
     )
-    with urllib.request.urlopen(request, timeout=30) as response:
-        return json.load(response)
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            return json.load(response)
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode(errors="replace")[:500]
+        print(f"Neon {path} -> HTTP {exc.code}: {body}", file=sys.stderr)
+        raise
 
 
 def _item_seconds(item: dict[str, Any]) -> float:
@@ -75,11 +81,20 @@ def build_payload(
     }
 
 
-def fetch_project_names(key: str, org_id: Optional[str]) -> dict[str, str]:
+def fetch_projects(key: str, org_id: Optional[str]) -> list[dict[str, Any]]:
     params: dict[str, Any] = {"limit": 400}
     if org_id:
         params["org_id"] = org_id
-    return {p["id"]: p["name"] for p in _get("/projects", params, key).get("projects", [])}
+    return _get("/projects", params, key).get("projects", [])
+
+
+def counter_seconds(projects: list[dict[str, Any]]) -> dict[str, float]:
+    """Current-period compute seconds from the project list (works on every plan).
+
+    `cpu_used_sec` is compute-unit seconds for the current billing period; it resets
+    at the start of each period, so past months cannot be recovered this way.
+    """
+    return {p["id"]: float(p.get("cpu_used_sec") or 0) for p in projects}
 
 
 def fetch_seconds(
@@ -104,6 +119,7 @@ def fetch_seconds(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--month", help="YYYY-MM to report (default: current month)")
     parser.add_argument("--dry-run", action="store_true", help="print the payload, don't push")
     args = parser.parse_args()
 
@@ -112,11 +128,33 @@ def main() -> int:
         print("NEON_API_KEY is not set.", file=sys.stderr)
         return 2
     org_id = os.environ.get("NEON_ORG_ID")
-    now = datetime.now(timezone.utc)
-    start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    now = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
+    if args.month:
+        try:
+            start = datetime.strptime(args.month, "%Y-%m").replace(tzinfo=timezone.utc)
+        except ValueError:
+            parser.error("--month must look like 2026-09")
+    else:
+        start = now.replace(day=1, hour=0)
+    next_month = (start + timedelta(days=32)).replace(day=1)
+    end = min(now, next_month)
+    if end <= start:  # first hour of the month: the API rejects an empty range
+        end = start + timedelta(hours=1)
 
-    seconds = fetch_seconds(key, org_id, start, now)
-    payload = build_payload(seconds, fetch_project_names(key, org_id), now.strftime("%Y-%m"))
+    projects = fetch_projects(key, org_id)
+    try:
+        seconds = fetch_seconds(key, org_id, start, end)
+    except urllib.error.HTTPError as exc:
+        if exc.code not in (400, 403):
+            raise
+        if start.strftime("%Y-%m") != now.strftime("%Y-%m"):
+            print("No consumption history for that month; past months cannot be rebuilt.",
+                  file=sys.stderr)
+            return 1
+        print("Consumption API unavailable; using per-project counters.", file=sys.stderr)
+        seconds = counter_seconds(projects)
+    names = {p["id"]: p["name"] for p in projects}
+    payload = build_payload(seconds, names, start.strftime("%Y-%m"))
     print(json.dumps(payload, indent=2))
     if args.dry_run:
         return 0

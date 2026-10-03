@@ -14,7 +14,11 @@ Pass the real month-to-date total from the dashboard's invoice preview with
 that total; estimates that fall short of it appear as "(unattributed)", and
 estimates that exceed it are scaled down to fit.
 
-    python scripts/push_fly_costs.py [--invoice-total 10.30] [--dry-run]
+For a finished month (--month YYYY-MM) event history is gone, so the invoice is split
+across apps in proportion to what each would cost always-on (machine sizes, volumes,
+dedicated IPs). Fly bills by region and product, not app, so this is only a rough split.
+
+    python scripts/push_fly_costs.py [--invoice-total 10.30] [--month 2026-09] [--dry-run]
 """
 
 from __future__ import annotations
@@ -84,6 +88,33 @@ def app_estimate(
     return cost
 
 
+def app_weight(
+    machines: list[dict[str, Any]], volumes: list[dict[str, Any]], ips: list[dict[str, Any]]
+) -> float:
+    """Monthly cost of an app's footprint if it ran all month."""
+    weight = sum(
+        machine_monthly_price(m.get("config", {}).get("guest", {})) or 0.0 for m in machines
+    )
+    weight += sum(v.get("size_gb", 0) * VOLUME_GB_MONTH for v in volumes)
+    weight += sum(DEDICATED_IPV4_MONTH for ip in ips if ip.get("Type") == "v4")
+    return weight
+
+
+def split_invoice(weights: dict[str, float], period: str, invoice_total: float) -> dict[str, Any]:
+    """Allocate a known invoice total across apps in proportion to their weights."""
+    weight_sum = sum(weights.values())
+    if weight_sum <= 0:
+        by_app = {UNATTRIBUTED: invoice_total}
+    else:
+        by_app = {app: invoice_total * w / weight_sum for app, w in weights.items() if w > 0}
+    return {
+        "period": period,
+        "total_usd": round(invoice_total, 2),
+        "by_app": {app: round(cost, 2) for app, cost in sorted(by_app.items())},
+        "estimated": True,
+    }
+
+
 def build_payload(
     estimates: dict[str, float], period: str, invoice_total: Optional[float]
 ) -> dict[str, Any]:
@@ -123,17 +154,43 @@ def _remembered_invoice(period: str) -> Optional[float]:
         return None
 
 
+def report_past_month(period: str, invoice_total: float, dry_run: bool) -> int:
+    weights = {}
+    for app in _fly_json("apps", "list"):
+        name = app["Name"]
+        weights[name] = app_weight(
+            _fly_json("machine", "list", "-a", name),
+            _fly_json("volumes", "list", "-a", name),
+            _fly_json("ips", "list", "-a", name),
+        )
+    payload = split_invoice(weights, period, invoice_total)
+    print(json.dumps(payload, indent=2))
+    if dry_run:
+        return 0
+    if not push_common.post_metrics("fly", payload, push_common.load_config()):
+        print("Push failed (check AISAAC_DASHBOARD_URL / AISAAC_INTERNAL_SECRET).", file=sys.stderr)
+        return 1
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
         "--invoice-total", type=float, help="month-to-date total from the Fly billing page"
+    )
+    parser.add_argument(
+        "--month", help="YYYY-MM to report (default: current month); past months split by size"
     )
     parser.add_argument("--dry-run", action="store_true", help="print the payload, don't push")
     args = parser.parse_args()
 
     now = datetime.now(timezone.utc)
     start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    period = now.strftime("%Y-%m")
+    period = args.month or now.strftime("%Y-%m")
+    if period != now.strftime("%Y-%m"):
+        if args.invoice_total is None:
+            parser.error("--month for a past month needs --invoice-total")
+        return report_past_month(period, args.invoice_total, args.dry_run)
     start_ms, now_ms = int(start.timestamp() * 1000), int(now.timestamp() * 1000)
 
     if args.invoice_total is not None:
