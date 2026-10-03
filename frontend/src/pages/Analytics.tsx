@@ -1,15 +1,13 @@
 import { Refresh } from "iconoir-react";
+import { Link } from "react-router-dom";
 
 import { fetchAnalytics } from "../api";
 import { CommitActivityChart } from "../components/analytics/CommitActivityChart";
 import { Card } from "../components/primitives/Card";
-import { EmptyState } from "../components/primitives/EmptyState";
 import { ErrorState } from "../components/primitives/ErrorState";
 import { PageHeader } from "../components/primitives/PageHeader";
 import { Skeleton } from "../components/primitives/Skeleton";
 import { Stat } from "../components/primitives/Stat";
-import { Table } from "../components/primitives/Table";
-import { repoColumns, repoFilters, repoSearchText } from "../components/RepoActivityCard";
 import { useAsyncData } from "../hooks/useAsyncData";
 import type { RepoActivity } from "../types";
 
@@ -62,11 +60,7 @@ export default function Analytics() {
 
       {!loading && !error && (
         <div className="activity-feed-section">
-          {repos.length > 0 ? (
-            <Table columns={repoColumns} rows={repos} rowKey={(r) => r.repo_id} searchText={repoSearchText} filters={repoFilters} />
-          ) : (
-            <EmptyState message="No repositories are configured for this profile." />
-          )}
+          <Link to="/github/repositories">All repositories →</Link>
         </div>
       )}
     </>
