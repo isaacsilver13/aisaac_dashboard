@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 
+import { ConfigPanel } from "../components/ConfigPanel";
 import { Card } from "../components/primitives/Card";
 import { PageHeader } from "../components/primitives/PageHeader";
 import { useTheme } from "../theme/useTheme";
@@ -46,6 +47,13 @@ export default function Settings() {
         </form>
         <p className="ui-stat-label" style={{ marginTop: 12 }}>{saved ? "A token is saved." : "No token saved."}</p>
       </Card>
+
+      {saved && (
+        <>
+          <div className="ui-stat-label" style={{ margin: "16px 0 8px" }}>Backend configuration</div>
+          <ConfigPanel token={readToken()} />
+        </>
+      )}
 
       <div className="ui-stat-label" style={{ margin: "16px 0 8px" }}>Appearance</div>
       <Card>

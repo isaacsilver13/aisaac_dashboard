@@ -20,6 +20,16 @@ describe("DataTab", () => {
     expect(screen.getByText("fresh")).toBeTruthy();
   });
 
+  it("shows a history chart for each numeric metric series", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => new Response(JSON.stringify(
+      url.includes("metrics-history")
+        ? { series: { games: [{ t: "2026-10-03T00:00:00Z", value: 3 }, { t: "2026-10-03T01:00:00Z", value: 5 }] } }
+        : { results: [result({ games: 3 })] },
+    ))));
+    render(<DataTab appId="a" />);
+    expect((await screen.findAllByText("games")).length).toBeGreaterThan(1); // table row + chart title
+  });
+
   it("says so when no metrics are reported", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ results: [result({})] }))));
     render(<DataTab appId="a" />);

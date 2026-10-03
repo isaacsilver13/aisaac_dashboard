@@ -108,6 +108,15 @@ def app_health_history(
     return health_history.history(app_id, range)
 
 
+@app.get("/api/v1/apps/{app_id}/metrics-history")
+def app_metrics_history(
+    app_id: str, range: health_history.Range = Query(default="24h")
+) -> dict:
+    if app_id not in {a.id for a in get_registry(settings.profile)}:
+        raise HTTPException(404, "Unknown application.")
+    return health_history.metrics_history(app_id, range)
+
+
 def _require_internal_secret(x_internal_secret: Optional[str] = Header(default=None)) -> None:
     if not settings.internal_report_secret:
         raise HTTPException(503, "Push reporting is not configured on this deployment.")
@@ -267,6 +276,35 @@ def get_runbook(app_id: str) -> str:
 )
 def second_brain_sync(payload: SecondBrainSyncIn) -> None:
     second_brain_store.replace_all(payload.meta, [n.model_dump() for n in payload.notes])
+
+
+# (setting, label, what it enables). Values are never returned, only whether each is set.
+_CONFIG_CHECKS = (
+    ("dashboard_read_token", "Dashboard read token", "Knowledge, financials, deployments, logs"),
+    ("internal_report_secret", "Internal report secret", "Push jobs and heartbeats"),
+    ("fly_api_token", "Fly API token", "Deployments and logs tabs"),
+    ("github_token", "GitHub token", "Repo, PR and CI data (rate limits without it)"),
+    ("resend_api_key", "Resend API key", "Email alerts"),
+    ("alert_to_email", "Alert recipient", "Email alerts"),
+    ("ntfy_topic", "ntfy topic", "CI push notifications"),
+)
+
+
+@app.get("/api/v1/config-status", dependencies=[Depends(_require_read_token)])
+def config_status() -> dict:
+    items = [
+        {
+            "key": key, "label": label, "used_for": used_for,
+            "configured": bool(getattr(settings, key)),
+        }
+        for key, label, used_for in _CONFIG_CHECKS
+    ]
+    items.append({
+        "key": "health_poll_interval_seconds", "label": "Health poller",
+        "used_for": "Records health history without anyone viewing the dashboard",
+        "configured": settings.health_poll_interval_seconds > 0,
+    })
+    return {"profile": settings.profile, "items": items}
 
 
 @app.get("/api/v1/automations", dependencies=[Depends(_require_read_token)])

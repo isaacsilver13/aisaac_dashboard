@@ -191,3 +191,16 @@ export interface AutomationStatus {
   expected_hours: number | null;
   status: "ok" | "stale" | "never" | "disabled";
 }
+
+export interface ConfigItem {
+  key: string;
+  label: string;
+  used_for: string;
+  configured: boolean;
+}
+
+export interface MetricsHistory {
+  app_id: string;
+  range: HistoryRange;
+  series: Record<string, { t: string; value: number }[]>;
+}
