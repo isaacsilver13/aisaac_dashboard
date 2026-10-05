@@ -46,3 +46,12 @@ def test_frontmatter_forwarded_without_the_fields_stored_elsewhere(tmp_path):
     )
     note = sbp.load_vault(vault)[0]
     assert note["frontmatter"] == {"type": "wiki-index", "updated": "2026-10-02"}
+
+
+def test_leak_in_frontmatter_is_detected(tmp_path):
+    vault = _vault(tmp_path, "clean body")
+    (vault / "wikis" / "apps" / "index.md").write_text(
+        '---\ntitle: "Apps"\nsource: sk-abcdefghijklmnopqrstuvwx1234\n---\nclean body'
+    )
+    notes = sbp.load_vault(vault)
+    assert sbp.leaks(notes, vault) == ["wikis/apps/index.md"]
