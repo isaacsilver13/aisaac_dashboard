@@ -1,4 +1,4 @@
-import type { AutomationStatus, ConfigItem, MetricsHistory, AppLogs, Deployments, HealthHistory, HistoryRange, AgentSummary, CIEvent, DashboardResponse, FinancialSnapshot, Incident, Note, NoteListItem, RepoActivity, SecondBrainSummary } from "./types";
+import type { AutomationStatus, ConfigItem, MetricsHistory, AppLogs, Deployments, HealthHistory, HistoryRange, AgentSummary, CIEvent, DashboardResponse, FinancialSnapshot, Incident, Note, NoteListItem, Portal, RepoActivity, SecondBrainSummary, VaultGraph } from "./types";
 
 export class FinancialsAuthError extends Error {}
 
@@ -156,3 +156,7 @@ export async function fetchMetricsHistory(appId: string, range: HistoryRange): P
   if (!response.ok) throw new Error(`Metrics history request failed with HTTP ${response.status}.`);
   return (await response.json()) as MetricsHistory;
 }
+
+export const fetchPortals = (token: string) => secondBrainGet<Portal[]>("portals", token);
+
+export const fetchGraph = (token: string) => secondBrainGet<VaultGraph>("graph", token);
