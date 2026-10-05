@@ -25,7 +25,7 @@ export default function App() {
         <Route path="/github/repositories/:repo" element={<RepositoryDetail />} />
         <Route path="/tasks" element={<Tasks />} />
         <Route path="/automations" element={<Automations />} />
-        <Route path="/knowledge" element={<SecondBrain />} />
+        <Route path="/knowledge/*" element={<SecondBrain />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/second-brain" element={<RedirectKeepSearch to="/knowledge" />} />
         <Route path="/analytics" element={<RedirectKeepSearch to="/github" />} />
