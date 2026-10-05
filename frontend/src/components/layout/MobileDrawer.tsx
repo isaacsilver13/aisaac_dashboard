@@ -7,14 +7,17 @@ import { NAV_ITEMS } from "./navItems";
 interface MobileDrawerProps {
   open: boolean;
   onClose: () => void;
+  apps: { id: string; name: string }[];
 }
 
-export function MobileDrawer({ open, onClose }: MobileDrawerProps) {
+export function MobileDrawer({ open, onClose, apps }: MobileDrawerProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     closeButtonRef.current?.focus();
 
     function handleKeyDown(event: KeyboardEvent) {
@@ -40,7 +43,10 @@ export function MobileDrawer({ open, onClose }: MobileDrawerProps) {
       }
     }
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
   }, [open, onClose]);
 
   if (!open) return null;
@@ -55,21 +61,42 @@ export function MobileDrawer({ open, onClose }: MobileDrawerProps) {
         aria-label="Navigation menu"
         onClick={(event) => event.stopPropagation()}
       >
-        <button type="button" ref={closeButtonRef} className="app-drawer-close" onClick={onClose} aria-label="Close navigation menu">
+        <button
+          type="button"
+          ref={closeButtonRef}
+          className="app-drawer-close"
+          onClick={onClose}
+          aria-label="Close navigation menu"
+        >
           <Xmark width={20} height={20} aria-hidden="true" />
         </button>
         <nav className="app-sidebar-nav">
           {NAV_ITEMS.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              onClick={onClose}
-              className={({ isActive }) => `app-sidebar-link${isActive ? " app-sidebar-link-active" : ""}`}
-            >
-              <item.icon width={17} height={17} aria-hidden="true" />
-              <span>{item.label}</span>
-            </NavLink>
+            <div key={item.to}>
+              <NavLink
+                to={item.to}
+                end={item.end}
+                onClick={onClose}
+                className={({ isActive }) => `app-sidebar-link${isActive ? " app-sidebar-link-active" : ""}`}
+              >
+                <item.icon width={17} height={17} aria-hidden="true" />
+                <span>{item.label}</span>
+              </NavLink>
+              {item.hasApps && apps.length > 0 && (
+                <div className="app-drawer-subnav" aria-label="Applications">
+                  {apps.map((app) => (
+                    <NavLink
+                      key={app.id}
+                      to={`/applications/${app.id}/overview`}
+                      onClick={onClose}
+                      className={({ isActive }) => `app-sidebar-link${isActive ? " app-sidebar-link-active" : ""}`}
+                    >
+                      <span>{app.name}</span>
+                    </NavLink>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
         </nav>
       </div>

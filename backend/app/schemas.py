@@ -168,6 +168,14 @@ class ClaudeUsageIn(BaseModel):
     weekly: UsageWindow
 
 
+class CodexUsageIn(BaseModel):
+    """Account usage windows reported by the local Codex app-server."""
+
+    primary: UsageWindow
+    secondary: Optional[UsageWindow] = None
+    plan_type: Optional[str] = None
+
+
 class ProviderCostIn(BaseModel):
     period: str = Field(description="Billing month, e.g. 2026-09")
     total_usd: float = Field(ge=0)
@@ -188,6 +196,10 @@ class ClaudeUsageOut(ClaudeUsageIn):
     reported_at: datetime
 
 
+class CodexUsageOut(CodexUsageIn):
+    reported_at: datetime
+
+
 class ProviderCostOut(ProviderCostIn):
     reported_at: datetime
 
@@ -198,6 +210,7 @@ class NeonUsageOut(NeonUsageIn):
 
 class FinancialSnapshot(BaseModel):
     claude: Optional[ClaudeUsageOut] = None
+    codex: Optional[CodexUsageOut] = None
     neon: Optional[NeonUsageOut] = None
     fly: Optional[ProviderCostOut] = None
     detail: Optional[str] = None

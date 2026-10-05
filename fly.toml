@@ -11,7 +11,9 @@ primary_region = "ewr"
 
 [env]
   PROFILE = "production"
-  CACHE_TTL_SECONDS = "7200"
+  # Health states should settle after a cold start but must not look disconnected
+  # for hours after an endpoint or provider recovers.
+  CACHE_TTL_SECONDS = "300"
   INCIDENTS_DB_PATH = "/data/aisaac_incidents.db"
   CI_EVENTS_DB_PATH = "/data/aisaac_ci_events.db"
   SECOND_BRAIN_DB_PATH = "/data/aisaac_second_brain.db"

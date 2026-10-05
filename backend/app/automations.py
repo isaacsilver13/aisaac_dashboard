@@ -15,6 +15,7 @@ from . import ci_events, health_history, metrics_store, second_brain_store
 # (id, name, metrics source, expected_hours)
 _PUSH_JOBS = (
     ("claude-usage", "Claude usage push", "claude", 2.0),
+    ("codex-usage", "Codex usage push", "codex", 2.0),
     ("neon-usage", "Neon usage push", "neon", 26.0),
     ("fly-costs", "Fly cost push", "fly", 26.0),
 )

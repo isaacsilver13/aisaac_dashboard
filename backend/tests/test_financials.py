@@ -9,6 +9,10 @@ CLAUDE = {
     "session": {"used_pct": 42.5, "resets_at": "2026-09-30T23:00:00Z"},
     "weekly": {"used_pct": 71.0, "resets_at": "2026-10-03T21:00:00Z"},
 }
+CODEX = {
+    "primary": {"used_pct": 4.0, "resets_at": "2026-10-10T00:00:00Z"},
+    "plan_type": "plus",
+}
 COST = {"period": "2026-09", "total_usd": 12.34, "by_app": {"gym-tracker": 5.0, "vinyl": 7.34}}
 NEON = {
     "period": "2026-09",
@@ -45,9 +49,11 @@ def _read(token="read"):
 
 def test_push_then_read_round_trip():
     assert _push("claude", CLAUDE).status_code == 204
+    assert _push("codex", CODEX).status_code == 204
     assert _push("neon", NEON).status_code == 204
     body = _read().json()
     assert body["claude"]["session"]["used_pct"] == 42.5
+    assert body["codex"]["primary"]["used_pct"] == 4.0
     assert body["neon"]["by_app"] == NEON["by_app"]
     assert body["neon"]["total_compute_hours"] == 3.5
     assert body["fly"] is None
@@ -78,6 +84,7 @@ def test_unknown_source_and_bad_payload():
     assert _push("stripe", COST).status_code == 404
     assert _push("claude", {"session": {"used_pct": 150, "resets_at": "2026-09-30T23:00:00Z"},
                             "weekly": CLAUDE["weekly"]}).status_code == 422
+    assert _push("codex", {"primary": {"used_pct": 4}}).status_code == 422
 
 
 def test_store_survives_reconfigure(tmp_path):

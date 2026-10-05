@@ -1,7 +1,7 @@
 # Push scripts
 
 These run outside the dashboard and push figures to `POST /internal/metrics/{source}`.
-The dashboard holds no Claude, Neon or Fly credentials.
+The dashboard holds no Claude, Codex, Neon or Fly credentials.
 
 ## One-time setup
 
@@ -19,6 +19,13 @@ Registered as the Claude Code `statusLine` command in `~/.claude/settings.json`.
 `rate_limits` (`five_hour` / `seven_day`: `used_percentage`, `resets_at`) to it; it prints
 `5h 12% | 7d 55%` and pushes at most every 5 minutes. Only updates while a Claude Code session is
 open, and only on Pro/Max plans.
+
+## Codex account usage — `push_codex_usage.py`
+
+Reads the signed-in local Codex app-server's included-usage windows and pushes a normalized
+snapshot. Schedule `python scripts/push_codex_usage.py` every two hours on the machine that runs
+Codex. Use `--dry-run` to verify the local Codex connection before scheduling it. The script sends
+only window percentages, reset times, and the plan label; it does not send credentials or account IDs.
 
 ## Neon compute hours per project — `push_neon_usage.py`
 

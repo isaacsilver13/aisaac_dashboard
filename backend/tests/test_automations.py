@@ -17,6 +17,7 @@ def test_snapshot_flags_never_ok_stale_and_disabled(tmp_path, monkeypatch):
 
     rows = _by_id(automations.snapshot(0, now=NOW))
     assert rows["claude-usage"]["status"] == "never"
+    assert rows["codex-usage"]["status"] == "never"
     assert rows["health-poll"]["status"] == "disabled"
     assert rows["ci-events"]["status"] == "never"
 

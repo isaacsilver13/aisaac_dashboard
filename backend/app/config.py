@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     coms_debounce_minutes: float = 10.0
     ci_events_db_path: str = "./aisaac_ci_events.db"
 
-    # Financial figures (Claude usage, Neon/Fly costs) are pushed by external
+    # Financial figures (Claude/Codex usage, Neon/Fly costs) are pushed by external
     # jobs via /internal/metrics/{source}; reads need a separate token so a
     # browser-held token can never write.
     metrics_db_path: str = "./aisaac_metrics.db"
