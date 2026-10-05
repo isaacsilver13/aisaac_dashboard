@@ -1,16 +1,19 @@
 import { useCallback, useState, type FormEvent } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 
-import { FinancialsAuthError, fetchNote, fetchNotes, fetchPortals } from "../api";
+import { FinancialsAuthError, fetchGraph, fetchNote, fetchNotes, fetchPortals } from "../api";
 import { noteHref } from "../components/dashboard/secondBrain";
 import { Article } from "../components/knowledge/Article";
+import { Graph } from "../components/knowledge/Graph";
+import { neighborhood } from "../components/knowledge/graphLayout";
 import { Landing, PortalPage } from "../components/knowledge/Portals";
 import { Card } from "../components/primitives/Card";
 import { EmptyState } from "../components/primitives/EmptyState";
+import { PageHeader } from "../components/primitives/PageHeader";
 import { Table, type Column } from "../components/primitives/Table";
 import { useAsyncData } from "../hooks/useAsyncData";
 import { readToken, writeToken } from "../token";
-import type { NoteListItem } from "../types";
+import type { NoteListItem, VaultGraph } from "../types";
 
 const noteColumns: Column<NoteListItem>[] = [
   {
@@ -78,6 +81,7 @@ function Vault({ token, onAuthError }: { token: string; onAuthError: () => void 
   );
   const notes = useAsyncData(useCallback(() => guard(fetchNotes(token)), [guard, token]));
   const portals = useAsyncData(useCallback(() => guard(fetchPortals(token)), [guard, token]));
+  const graph = useAsyncData(useCallback(() => guard(fetchGraph(token)), [guard, token]));
   const splat = useParams()["*"] ?? "";
   const [params] = useSearchParams();
 
@@ -106,12 +110,33 @@ function Vault({ token, onAuthError }: { token: string; onAuthError: () => void 
       </>
     );
   }
+  if (splat === "graph") {
+    return (
+      <>
+        <Link className="ui-stat-label" to="/knowledge">
+          ← Portals
+        </Link>
+        <PageHeader title="Graph" description="Every note and the wikilinks between them." />
+        {graph.data ? <Graph graph={graph.data} /> : <EmptyState message={graph.error ?? "Loading…"} />}
+      </>
+    );
+  }
   const portal = portals.data.find((p) => p.id === splat);
   if (portal) return <PortalPage portal={portal} notes={notes.data} />;
-  return <ArticlePage token={token} path={`${splat}.md`} guard={guard} />;
+  return <ArticlePage token={token} path={`${splat}.md`} guard={guard} graph={graph.data} />;
 }
 
-function ArticlePage({ token, path, guard }: { token: string; path: string; guard: Guard }) {
+function ArticlePage({
+  token,
+  path,
+  guard,
+  graph,
+}: {
+  token: string;
+  path: string;
+  guard: Guard;
+  graph: VaultGraph | null;
+}) {
   const { data, error } = useAsyncData(useCallback(() => guard(fetchNote(token, path)), [guard, token, path]));
   if (error) {
     return (
@@ -130,6 +155,12 @@ function ArticlePage({ token, path, guard }: { token: string; path: string; guar
         ← {data.portal}
       </Link>
       <Article note={data} />
+      {graph && neighborhood(graph, path).nodes.length > 1 && (
+        <section>
+          <h2>Local graph</h2>
+          <Graph graph={neighborhood(graph, path)} current={path} />
+        </section>
+      )}
     </>
   );
 }
