@@ -50,7 +50,11 @@ export function AppShell({ children }: AppShellProps) {
         }}
       />
       <MobileTopBar status={status} onOpenMenu={() => setDrawerOpen(true)} />
-      <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <MobileDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        apps={(data?.results ?? []).map((r) => ({ id: r.app_id, name: r.name }))}
+      />
       {/* Keyed by top-level section so tab changes inside a page do not remount it. */}
       <motion.main
         key={section}

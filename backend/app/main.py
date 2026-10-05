@@ -37,6 +37,8 @@ from .schemas import (
     CIReportIn,
     ClaudeUsageIn,
     ClaudeUsageOut,
+    CodexUsageIn,
+    CodexUsageOut,
     DashboardResponse,
     FinancialSnapshot,
     IncidentOut,
@@ -166,7 +168,12 @@ async def app_logs(app_id: str) -> dict:
     return {"app_id": out["app_id"], "fly_app": out["fly_app"], "lines": out["items"]}
 
 
-_METRIC_MODELS = {"claude": ClaudeUsageIn, "neon": NeonUsageIn, "fly": ProviderCostIn}
+_METRIC_MODELS = {
+    "claude": ClaudeUsageIn,
+    "codex": CodexUsageIn,
+    "neon": NeonUsageIn,
+    "fly": ProviderCostIn,
+}
 
 
 @app.post(
@@ -200,11 +207,17 @@ def financials() -> FinancialSnapshot:
         )
 
     claude = _load("claude", ClaudeUsageOut)
+    codex = _load("codex", CodexUsageOut)
     neon = _load("neon", NeonUsageOut)
     fly = _load("fly", ProviderCostOut)
-    missing = [n for n, v in (("claude", claude), ("neon", neon), ("fly", fly)) if v is None]
+    missing = [
+        name
+        for name, value in (("claude", claude), ("codex", codex), ("neon", neon), ("fly", fly))
+        if value is None
+    ]
     return FinancialSnapshot(
         claude=claude,
+        codex=codex,
         neon=neon,
         fly=fly,
         detail=f"No data reported yet for: {', '.join(missing)}." if missing else None,

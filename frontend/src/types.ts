@@ -94,6 +94,13 @@ export interface ClaudeUsage {
   reported_at: string;
 }
 
+export interface CodexUsage {
+  primary: UsageWindow;
+  secondary: UsageWindow | null;
+  plan_type: string | null;
+  reported_at: string;
+}
+
 export interface ProviderCost {
   period: string;
   total_usd: number;
@@ -111,6 +118,7 @@ export interface NeonUsage {
 
 export interface FinancialSnapshot {
   claude: ClaudeUsage | null;
+  codex: CodexUsage | null;
   neon: NeonUsage | null;
   fly: ProviderCost | null;
   detail: string | null;

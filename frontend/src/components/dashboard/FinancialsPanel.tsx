@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 
 import { FinancialsAuthError, fetchFinancials } from "../../api";
 import { readToken, writeToken } from "../../token";
-import type { ClaudeUsage, FinancialSnapshot, NeonUsage, ProviderCost, UsageWindow } from "../../types";
+import type { ClaudeUsage, CodexUsage, FinancialSnapshot, NeonUsage, ProviderCost, UsageWindow } from "../../types";
 import { Badge } from "../primitives/Badge";
 import { Card } from "../primitives/Card";
 import { EmptyState } from "../primitives/EmptyState";
@@ -117,6 +117,24 @@ function ClaudeUsageCards({ usage }: { usage: ClaudeUsage | null }) {
   );
 }
 
+function CodexUsageCards({ usage }: { usage: CodexUsage | null }) {
+  if (!usage) {
+    return (
+      <Card>
+        <Stat label="Codex usage" value="--" />
+        <div className="ui-stat-label" style={{ marginTop: 10 }}>Not reporting</div>
+      </Card>
+    );
+  }
+  const stale = isStale(usage.reported_at, USAGE_STALE_MS);
+  return (
+    <>
+      <UsageMeter label="Codex primary" window={usage.primary} stale={stale} />
+      {usage.secondary && <UsageMeter label="Codex secondary" window={usage.secondary} stale={stale} />}
+    </>
+  );
+}
+
 export function FinancialsPanel() {
   const [token, setToken] = useState(readToken);
   const [draft, setDraft] = useState("");
@@ -182,6 +200,7 @@ export function FinancialsPanel() {
   return (
     <section aria-label="Usage and costs" className="financials-row">
       <ClaudeUsageCards usage={snapshot.claude} />
+      <CodexUsageCards usage={snapshot.codex} />
       <NeonCard usage={snapshot.neon} />
       <CostCard label="Fly.io" cost={snapshot.fly} />
     </section>

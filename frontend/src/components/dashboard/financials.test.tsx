@@ -17,7 +17,18 @@ function makeSnapshot(overrides: Partial<FinancialSnapshot> = {}): FinancialSnap
       weekly: { used_pct: 80, resets_at: "2026-10-03T00:00:00Z" },
       reported_at: reported,
     },
-    neon: { period: "2026-09", total_compute_hours: 12.5, by_app: { vinyl: 10, "gym-tracker": 2.5 }, reported_at: reported },
+    codex: {
+      primary: { used_pct: 4, resets_at: "2026-10-07T00:00:00Z" },
+      secondary: null,
+      plan_type: "plus",
+      reported_at: reported,
+    },
+    neon: {
+      period: "2026-09",
+      total_compute_hours: 12.5,
+      by_app: { vinyl: 10, "gym-tracker": 2.5 },
+      reported_at: reported,
+    },
     fly: {
       period: "2026-09",
       total_usd: 10.3,
@@ -87,6 +98,7 @@ describe("FinancialsPanel", () => {
 
     expect(await screen.findByText("42%")).toBeInTheDocument();
     expect(screen.getByText("80%")).toBeInTheDocument();
+    expect(screen.getByText("4%")).toBeInTheDocument();
     expect(screen.getByText("12.5 h")).toBeInTheDocument();
     expect(screen.getByText("2.50 h")).toBeInTheDocument();
     expect(screen.getByText("vinyl")).toBeInTheDocument();

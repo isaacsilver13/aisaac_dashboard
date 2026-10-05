@@ -37,6 +37,10 @@ Backend settings come from environment variables (`backend/app/config.py`). Secr
 | `NTFY_TOPIC` | CI push notifications. |
 | `HEALTH_POLL_INTERVAL_SECONDS` | Optional in-process poller (default 0 = off). |
 
+To report Codex included usage, schedule `python scripts/push_codex_usage.py` every two hours on
+the signed-in Codex machine. It uses the local Codex app-server and the same AIsaac push settings
+as the other scripts; run it once with `--dry-run` before scheduling.
+
 ## History
 
 Every fresh health check is stored (status, latency, numeric metrics) in SQLite on the Fly volume (`HEALTH_DB_PATH`, 30 days). History accrues only while something checks the apps: someone viewing the dashboard, or the optional poller. Fly machines auto-stop, so expect gaps.
