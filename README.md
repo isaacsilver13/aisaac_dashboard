@@ -18,7 +18,7 @@ The monitor checks configured public endpoints server-side. It does not access a
 | `/github`, `/github/repositories[/:repo]` | Repo activity, repository list and per-repo detail. |
 | `/tasks` | Open pull requests and unresolved incidents. |
 | `/automations` | Last run and staleness of push jobs and background tasks (observed, not scheduled). |
-| `/knowledge` | Second-brain notes (token-gated). |
+| `/knowledge[/*]` | Second-brain vault as a Wikipedia-style viewer (token-gated): wiki portals, articles with infobox, contents, hover previews, backlinks and a local graph; `/knowledge/<note path>`, `/knowledge/<wiki>` (portal), `/knowledge/graph`, `/knowledge/all`. |
 | `/settings` | Dashboard token, backend configuration status, theme. |
 
 Light and dark themes (tokens in `frontend/src/theme/theme.css`), Iconoir icons, and Motion transitions that respect `prefers-reduced-motion`.
