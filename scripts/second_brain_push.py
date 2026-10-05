@@ -55,6 +55,9 @@ def load_vault(vault: Path) -> list[dict]:
                     "title": title,
                     "aliases": aliases_of(fm.get("aliases", "")) or [title],
                     "status": fm.get("status"),
+                    "frontmatter": {
+                        k: v for k, v in fm.items() if k not in ("title", "aliases", "status")
+                    },
                     "body": body,
                 }
             )
