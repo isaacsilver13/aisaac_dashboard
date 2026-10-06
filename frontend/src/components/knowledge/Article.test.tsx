@@ -44,6 +44,12 @@ describe("Article", () => {
     expect(screen.getByRole("link", { name: "Other" })).toHaveAttribute("href", "/knowledge/projects/other");
   });
 
+  it("does not repeat the title when the body opens with the same H1", () => {
+    renderIt({ ...base, body: "# Apps Wiki\n\nLead.\n\n# Another top heading" });
+    expect(screen.getAllByRole("heading", { level: 1, name: "Apps Wiki" })).toHaveLength(1);
+    expect(screen.getByRole("heading", { level: 1, name: "Another top heading" })).toBeInTheDocument();
+  });
+
   it("omits see-also, backlinks and TOC when there is nothing to show", () => {
     renderIt({ ...base, body: "", links: [], backlinks: [], link_map: {}, frontmatter: {}, aliases: [] });
     expect(screen.queryByRole("heading", { name: "See also" })).toBeNull();

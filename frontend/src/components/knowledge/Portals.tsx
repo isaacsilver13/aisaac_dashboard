@@ -56,7 +56,9 @@ export function Landing({ portals, notes }: { portals: Portal[]; notes: NoteList
       ) : (
         <>
           <div className="portal-grid">
-            {portals.map((p) => (
+            {[...portals]
+              .sort((a, b) => Number(b.id.startsWith("wikis/")) - Number(a.id.startsWith("wikis/")))
+              .map((p) => (
               <Link key={p.id} to={`/knowledge/${p.id}`}>
                 <Card variant="interactive">
                   <strong>{p.title}</strong> <span className="ui-stat-label">{p.count} articles</span>

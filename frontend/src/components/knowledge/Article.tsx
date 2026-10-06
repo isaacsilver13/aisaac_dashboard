@@ -41,7 +41,9 @@ function RefList({ title, refs }: { title: string; refs: NoteRef[] }) {
 }
 
 export function Article({ note }: { note: Note }) {
-  const body = linkWikilinks(note.body, note.link_map);
+  // The page header already shows the title, so drop a leading H1 that repeats it.
+  const lead = new RegExp(`^\\s*#\\s+${note.title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*\\n`, "i");
+  const body = linkWikilinks(note.body.replace(lead, ""), note.link_map);
   const toc = headings(note.body);
   const infobox = infoboxRows(note);
   return (
