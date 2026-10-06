@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     # browser-held token can never write.
     metrics_db_path: str = "./aisaac_metrics.db"
     dashboard_read_token: str = ""
+    # Separate token for state-changing dashboard actions (resolving incidents) so a
+    # browser-held read token can never write.
+    dashboard_write_token: str = ""
 
     # Scoped read-only token for Portfolio Analysis's /health/metrics (aggregates only).
     # Deliberately NOT Portfolio's APP_TOKEN, which unlocks all of its financial data.
