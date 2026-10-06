@@ -9,6 +9,7 @@ import { Card } from "../primitives/Card";
 import { EmptyState } from "../primitives/EmptyState";
 import { ErrorState } from "../primitives/ErrorState";
 import { Stat } from "../primitives/Stat";
+import { exactTimestamp, humanizeTimestamp } from "../../time";
 
 const when = (iso: string | null) => (iso ? new Date(iso).toLocaleString([], { dateStyle: "short", timeStyle: "short" }) : "—");
 const state = (s: HealthState | string | null) => s ?? "—";
@@ -21,7 +22,10 @@ function Signals({ r }: { r: CheckResult }) {
       <Stat label="HTTP" value={r.http_status ?? "—"} />
       <Stat label="Readiness" value={state(r.readiness)} />
       <Stat label="Provider" value={state(r.provider_state)} />
-      <Stat label="Freshness" value={when(r.freshness)} />
+      <Stat
+        label="Freshness"
+        value={r.freshness ? <time dateTime={r.freshness} title={exactTimestamp(r.freshness)}>{humanizeTimestamp(r.freshness)}</time> : "—"}
+      />
       <Stat label="Page" value={state(r.page_state)} />
     </div>
   );
