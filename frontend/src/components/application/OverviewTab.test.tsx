@@ -26,6 +26,16 @@ describe("OverviewTab", () => {
     expect(await screen.findByText("Does things")).toBeTruthy();
     expect(screen.getByText("120 ms")).toBeTruthy();
     expect(await screen.findByText("Passing")).toBeTruthy();
+    expect(screen.getByText("games")).toBeTruthy();
+    expect(screen.getByText("3")).toBeTruthy();
+  });
+
+  it("says so when the app reports no metrics", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: string) =>
+      new Response(JSON.stringify(url.includes("dashboard") ? { results: [{ ...result, metrics: {} }] } : [])),
+    ));
+    render(<OverviewTab appId="a" />);
+    expect(await screen.findByText("This app reports no metrics.")).toBeTruthy();
   });
 
   it("shows an empty state for an unregistered app", async () => {

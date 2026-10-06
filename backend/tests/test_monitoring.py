@@ -3,6 +3,7 @@ import asyncio
 import httpx
 
 from app import incidents, reports
+from app.config import Settings
 from app.monitoring import Monitor
 from app.schemas import AppDefinition
 
@@ -15,6 +16,7 @@ def test_check_app_normalizes_healthy_json() -> None:
         description="Fixture service",
         product_url="https://example.com",
         health_url="https://health.example.com",
+        metric_allowlist=("version", "records"),
     )
 
     async def handler(request: httpx.Request) -> httpx.Response:
@@ -66,6 +68,7 @@ def test_check_app_unwraps_nested_health_payload() -> None:
         category="Test",
         description="Fixture service",
         health_url="https://health.example.com/health",
+        metric_allowlist=("scheduler",),
     )
 
     async def handler(request: httpx.Request) -> httpx.Response:
@@ -141,6 +144,100 @@ def test_check_app_allowlists_metrics_from_secondary_status_url() -> None:
     assert result.metrics == {"event_count": 4}
     assert result.provider_state == "fixture"
     assert result.metrics_state == "up"
+
+
+def _check(app: AppDefinition, health: dict, metrics: dict | None = None) -> object:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=metrics if request.url.host == "m.example.com" else health)
+
+    async def run_check() -> object:
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            return await Monitor().check_app(client, app)
+
+    return asyncio.run(run_check())
+
+
+def test_no_allowlist_means_no_metrics() -> None:
+    app = AppDefinition(
+        id="fixture",
+        name="Fixture",
+        category="Test",
+        description="Fixture service",
+        health_url="https://health.example.com",
+        metrics_url="https://m.example.com",
+    )
+
+    result = _check(app, {"status": "ok", "balance": 5}, {"total": 9})
+
+    assert result.metrics == {}
+    assert result.metrics_state == "up"
+
+
+def _token_app() -> AppDefinition:
+    return AppDefinition(
+        id="portfolio",
+        name="Portfolio",
+        category="Test",
+        description="Fixture service",
+        health_url="https://health.example.com",
+        metrics_url="https://m.example.com",
+        metric_allowlist=("positions_count",),
+        metrics_token_setting="portfolio_metrics_token",
+    )
+
+
+def test_metrics_token_is_sent_only_to_the_metrics_url() -> None:
+    seen: dict[str, str | None] = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen[request.url.host] = request.headers.get("x-metrics-token")
+        return httpx.Response(200, json={"status": "ok", "positions_count": 4})
+
+    async def run_check() -> object:
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            monitor = Monitor(settings=Settings(portfolio_metrics_token="tok"))
+            return await monitor.check_app(client, _token_app())
+
+    result = asyncio.run(run_check())
+
+    assert seen == {"health.example.com": None, "m.example.com": "tok"}
+    assert result.metrics == {"positions_count": 4}
+    assert result.metrics_state == "up"
+
+
+def test_unset_metrics_token_skips_the_request_without_degrading() -> None:
+    hosts: list[str] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        hosts.append(request.url.host)
+        return httpx.Response(200, json={"status": "ok"})
+
+    async def run_check() -> object:
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            monitor = Monitor(settings=Settings(portfolio_metrics_token=""))
+            return await monitor.check_app(client, _token_app())
+
+    result = asyncio.run(run_check())
+
+    assert "m.example.com" not in hosts
+    assert result.state == "up" and result.metrics_state is None and result.metrics == {}
+
+
+def test_freshness_comes_from_allowlisted_data_freshness_at() -> None:
+    app = AppDefinition(
+        id="fixture",
+        name="Fixture",
+        category="Test",
+        description="Fixture service",
+        health_url="https://health.example.com",
+        metrics_url="https://m.example.com",
+        metric_allowlist=("data_freshness_at",),
+    )
+
+    good = _check(app, {"status": "ok"}, {"data_freshness_at": "2026-10-05T12:00:00+00:00"})
+    assert good.freshness is not None and good.freshness.year == 2026
+    assert _check(app, {"status": "ok"}, {"data_freshness_at": "not a date"}).freshness is None
+    assert _check(app, {"status": "ok"}, {"data_freshness_at": None}).freshness is None
 
 
 def test_check_app_separates_readiness_from_liveness() -> None:

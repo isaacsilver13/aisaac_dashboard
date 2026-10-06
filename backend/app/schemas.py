@@ -24,6 +24,9 @@ class AppDefinition(BaseModel):
     check_kind: CheckKind = "json"
     monitor_target: MonitorTarget = "health"
     metric_allowlist: tuple[str, ...] = ()
+    # Name of the Settings field holding a read-only token for `metrics_url`, sent as
+    # X-Metrics-Token to that URL only. Unset token = metrics skipped, not an outage.
+    metrics_token_setting: Optional[str] = None
     timeout_seconds: float = Field(default=10.0, gt=0, le=30)
     enabled: bool = True
     # Fly app that hosts this service; enables the Deployments tab (needs FLY_API_TOKEN).

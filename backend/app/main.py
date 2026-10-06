@@ -300,6 +300,7 @@ _CONFIG_CHECKS = (
     ("resend_api_key", "Resend API key", "Email alerts"),
     ("alert_to_email", "Alert recipient", "Email alerts"),
     ("ntfy_topic", "ntfy topic", "CI push notifications"),
+    ("portfolio_metrics_token", "Portfolio metrics token", "Portfolio app metrics"),
 )
 
 
