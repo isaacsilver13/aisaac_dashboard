@@ -9,6 +9,7 @@ import { EmptyState } from "../primitives/EmptyState";
 import { ErrorState } from "../primitives/ErrorState";
 import { Stat } from "../primitives/Stat";
 import { Table, type Column } from "../primitives/Table";
+import { exactTimestamp, humanizeTimestamp } from "../../time";
 
 type Metric = { key: string; value: string };
 
@@ -61,7 +62,10 @@ export function DataTab({ appId }: { appId: string }) {
     <>
       <Card>
         <div style={{ display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))" }}>
-          <Stat label="Freshness" value={result.freshness ?? "—"} />
+          <Stat
+            label="Freshness"
+            value={result.freshness ? <time dateTime={result.freshness} title={exactTimestamp(result.freshness)}>{humanizeTimestamp(result.freshness)}</time> : "—"}
+          />
           <Stat label="Metrics" value={result.metrics_state ?? "—"} />
           <Stat label="Provider" value={result.provider_state ?? "—"} />
           <Stat label="Reported" value={when(result.checked_at)} />

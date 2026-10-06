@@ -90,6 +90,16 @@ export default function Settings() {
         </>
       )}
 
+      <div className="ui-stat-label" style={{ margin: "16px 0 8px" }}>GitHub connection</div>
+      <Card>
+        <p style={{ margin: "0 0 8px" }}>
+          GitHub activity is read server-side. Its status appears as <strong>GitHub token</strong> in Backend configuration.
+        </p>
+        <p className="ui-stat-label" style={{ margin: 0, textTransform: "none", letterSpacing: 0 }}>
+          Create a fine-grained, read-only token for the monitored repositories, then set it as the production <code>GITHUB_TOKEN</code> secret. Never paste it into this dashboard.
+        </p>
+      </Card>
+
       <div className="ui-stat-label" style={{ margin: "16px 0 8px" }}>Appearance</div>
       <Card>
         <button type="button" onClick={toggle}>Theme: {theme} (switch)</button>

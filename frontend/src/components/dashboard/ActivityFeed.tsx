@@ -1,14 +1,11 @@
 import { Card } from "../primitives/Card";
 import { EmptyState } from "../primitives/EmptyState";
 import type { CheckResult } from "../../types";
+import { exactTimestamp, humanizeTimestamp } from "../../time";
 
 interface ActivityFeedProps {
   results: CheckResult[];
   limit?: number;
-}
-
-function formatCheckedTime(value: string): string {
-  return new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(new Date(value));
 }
 
 export function ActivityFeed({ results, limit = 6 }: ActivityFeedProps) {
@@ -28,7 +25,9 @@ export function ActivityFeed({ results, limit = 6 }: ActivityFeedProps) {
                 <strong>{result.name}</strong>
                 <span>{result.detail ?? `${result.state} check completed`}</span>
               </div>
-              <time>{formatCheckedTime(result.checked_at)}</time>
+              <time dateTime={result.checked_at} title={exactTimestamp(result.checked_at)}>
+                {humanizeTimestamp(result.checked_at)}
+              </time>
             </div>
           ))}
         </div>

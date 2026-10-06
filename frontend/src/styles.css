@@ -470,6 +470,34 @@ body { background-color: var(--bg); color: var(--text); }
 .tab-link-active { border-bottom-color: var(--text); color: var(--text); }
 button.tab-link { background: transparent; border-left: 0; border-right: 0; border-top: 0; cursor: pointer; font-family: inherit; }
 
+.stack-tab-heading { margin-bottom: 16px; }
+.stack-tab-heading h2 { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; margin: 0; }
+.stack-tab-heading p { color: var(--muted); margin: 4px 0 0; max-width: 720px; }
+.stack-flow-card { overflow: hidden; }
+.stack-flow { align-items: stretch; display: flex; list-style: none; margin: 0; padding: 0; }
+.stack-flow-step { align-items: center; display: flex; flex: 1; min-width: 0; }
+.stack-flow-node { background: var(--subtle); border: 1px solid var(--line); border-radius: var(--radius); display: flex; flex: 1; flex-direction: column; gap: 5px; min-height: 94px; justify-content: center; padding: 14px; }
+.stack-flow-node span, .stack-monitoring span { color: var(--muted); font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; }
+.stack-flow-node strong, .stack-monitoring strong { font-size: 13px; line-height: 1.35; }
+.stack-flow-arrow { color: var(--text-muted); font-size: 20px; flex: 0 0 auto; padding: 0 8px; }
+.stack-monitoring { align-items: center; border-top: 1px dashed var(--border-strong); display: flex; gap: 12px; margin-top: 18px; padding-top: 16px; }
+.stack-monitoring span { color: var(--accent); flex: 0 0 auto; }
+
+@media (max-width: 900px) {
+  .app-shell { flex-direction: column; }
+  .app-main { flex: 0 0 auto; overflow: visible; width: 100%; }
+  .tab-row { margin-left: -16px; margin-right: -16px; overflow-x: auto; padding: 0 16px; scrollbar-width: thin; }
+  .tab-link { flex: 0 0 auto; white-space: nowrap; }
+}
+
+@media (max-width: 640px) {
+  .stack-flow { align-items: stretch; flex-direction: column; gap: 8px; }
+  .stack-flow-step { flex: none; flex-direction: column; }
+  .stack-flow-node { min-height: 0; width: 100%; }
+  .stack-flow-arrow { line-height: 18px; padding: 0; transform: rotate(90deg); }
+  .stack-monitoring { align-items: flex-start; flex-direction: column; gap: 4px; }
+}
+
 .ui-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); }
 .ui-table-toolbar { border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
 .ui-table-toolbar input, .ui-table-toolbar select { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 13px; padding: 6px 10px; }
