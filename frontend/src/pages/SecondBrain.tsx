@@ -123,7 +123,8 @@ function Vault({ token, onAuthError }: { token: string; onAuthError: () => void 
   }
   const portal = portals.data.find((p) => p.id === splat);
   if (portal) return <PortalPage portal={portal} notes={notes.data} />;
-  return <ArticlePage token={token} path={`${splat}.md`} guard={guard} graph={graph.data} />;
+  // key: remount per article so a slow earlier response can't overwrite the newer one.
+  return <ArticlePage key={splat} token={token} path={`${splat}.md`} guard={guard} graph={graph.data} />;
 }
 
 function ArticlePage({

@@ -55,3 +55,12 @@ def test_leak_in_frontmatter_is_detected(tmp_path):
     )
     notes = sbp.load_vault(vault)
     assert sbp.leaks(notes, vault) == ["wikis/apps/index.md"]
+
+
+def test_leak_in_colonless_frontmatter_line_or_title_is_detected(tmp_path):
+    vault = _vault(tmp_path, "clean body")
+    note = vault / "wikis" / "apps" / "index.md"
+    note.write_text('---\ntitle: "Apps"\nsk-abcdefghijklmnopqrstuvwx1234\n---\nclean body')
+    assert sbp.leaks(sbp.load_vault(vault), vault) == ["wikis/apps/index.md"]
+    note.write_text('---\ntitle: "key sk-abcdefghijklmnopqrstuvwx1234"\n---\nclean body')
+    assert sbp.leaks(sbp.load_vault(vault), vault) == ["wikis/apps/index.md"]

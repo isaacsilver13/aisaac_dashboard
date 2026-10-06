@@ -89,14 +89,20 @@ def leaks(notes: list[dict], vault: Path) -> list[str]:
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     patterns = [*module.SECRETS, module.OPAQUE]
-    # Frontmatter is pushed too (not just the body), so it gets the same scan.
+    def pushed_text(n: dict) -> str:
+        # Everything that leaves the machine: body, title/aliases/status and all frontmatter.
+        fm = n.get("frontmatter", {})
+        return "\n".join(
+            [n["body"], n["title"], *n["aliases"], n["status"] or "", *fm.keys(), *fm.values()]
+        )
+
     return [
         n["path"]
         for n in notes
         if any(
             LONG_RUN.search(m.group(0)) and module.redact(m.group(0)) != m.group(0)
             for pat in patterns
-            for m in pat.finditer("\n".join([n["body"], *n.get("frontmatter", {}).values()]))
+            for m in pat.finditer(pushed_text(n))
         )
     ]
 
