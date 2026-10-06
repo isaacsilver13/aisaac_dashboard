@@ -154,6 +154,7 @@ class Monitor:
             http_status=response.status_code,
             readiness=readiness,
             provider_state=provider_state,
+            freshness=self._freshness(metrics),
             page_state=page_state,
             metrics_state=metrics_state,
             metrics=metrics,
@@ -283,9 +284,17 @@ class Monitor:
             key: value
             for key, value in payload.items()
             if key not in reserved
-            and (not allowlist or key in allowlist)
+            and key in allowlist  # empty allowlist = expose nothing
             and isinstance(value, (str, int, float, bool))
         }
+
+    @staticmethod
+    def _freshness(metrics: dict[str, Any]) -> datetime | None:
+        value = metrics.get("data_freshness_at")
+        try:
+            return datetime.fromisoformat(value) if isinstance(value, str) else None
+        except ValueError:
+            return None
 
     async def _check_metrics(
         self,
@@ -295,8 +304,21 @@ class Monitor:
     ) -> tuple[HealthState | None, dict[str, Any], str | None]:
         if app.metrics_url is None:
             return None, metrics, None
+        headers: dict[str, str] = {}
+        if app.metrics_token_setting:
+            token = str(getattr(self.settings, app.metrics_token_setting, "") or "")
+            if not token:
+                return None, metrics, None
+            headers["X-Metrics-Token"] = token
         try:
-            response = await client.get(str(app.metrics_url), timeout=app.timeout_seconds)
+            response = await client.get(
+                str(app.metrics_url),
+                headers=headers,
+                timeout=app.timeout_seconds,
+                # httpx strips only Authorization on cross-origin redirects, so a custom
+                # token header must never be sent through one.
+                follow_redirects=not headers,
+            )
             if response.status_code < 200 or response.status_code >= 300:
                 return "down", metrics, None
             payload = response.json()

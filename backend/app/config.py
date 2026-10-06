@@ -41,6 +41,10 @@ class Settings(BaseSettings):
     metrics_db_path: str = "./aisaac_metrics.db"
     dashboard_read_token: str = ""
 
+    # Scoped read-only token for Portfolio Analysis's /health/metrics (aggregates only).
+    # Deliberately NOT Portfolio's APP_TOKEN, which unlocks all of its financial data.
+    portfolio_metrics_token: str = ""
+
     # Health check history (uptime/latency/trends). Recorded on every fresh check;
     # the optional poller (seconds, 0 = off) records without anyone viewing the
     # dashboard, but only while the Fly machine is awake.

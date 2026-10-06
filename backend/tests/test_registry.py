@@ -33,3 +33,22 @@ def test_single_container_apps_use_one_host_for_every_url() -> None:
     for app in get_registry("production"):
         if app.id in SINGLE_HOST_APPS:
             assert len(set(_hosts(app).values())) == 1, f"{app.id} spans {_hosts(app)}"
+
+
+def test_metrics_are_explicitly_allowlisted_and_never_expose_quotas() -> None:
+    for profile in ("local", "production"):
+        for app in get_registry(profile):
+            label = f"{profile}/{app.id}"
+            if app.metrics_url is not None:
+                assert app.metric_allowlist, f"{label} has a metrics_url but no allowlist"
+            assert not any("quota" in key for key in app.metric_allowlist), label
+
+
+def test_metrics_token_settings_exist_and_only_accompany_a_metrics_url() -> None:
+    from app.config import Settings
+
+    for profile in ("local", "production"):
+        for app in get_registry(profile):
+            if app.metrics_token_setting:
+                assert app.metrics_token_setting in Settings.model_fields, app.id
+                assert app.metrics_url is not None, app.id

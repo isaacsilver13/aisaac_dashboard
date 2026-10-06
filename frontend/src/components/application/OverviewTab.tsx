@@ -21,7 +21,7 @@ function Signals({ r }: { r: CheckResult }) {
       <Stat label="HTTP" value={r.http_status ?? "—"} />
       <Stat label="Readiness" value={state(r.readiness)} />
       <Stat label="Provider" value={state(r.provider_state)} />
-      <Stat label="Freshness" value={r.freshness ?? "—"} />
+      <Stat label="Freshness" value={when(r.freshness)} />
       <Stat label="Page" value={state(r.page_state)} />
     </div>
   );
@@ -54,6 +54,17 @@ export function OverviewTab({ appId }: { appId: string }) {
         </div>
         {result.detail && <p className="ui-stat-label" style={{ marginTop: 12 }}>{result.detail}</p>}
         <div className="ui-stat-label" style={{ marginTop: 12 }}>Checked {when(result.checked_at)}{result.cached ? " (cached)" : ""}</div>
+      </Card>
+
+      <div className="ui-stat-label" style={{ margin: "16px 0 8px" }}>Snapshot</div>
+      <Card>
+        {Object.keys(result.metrics).length > 0 ? (
+          <div style={{ display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))" }}>
+            {Object.entries(result.metrics).map(([key, value]) => <Stat key={key} label={key} value={String(value)} />)}
+          </div>
+        ) : (
+          <EmptyState message="This app reports no metrics." />
+        )}
       </Card>
 
       <div className="ui-stat-label" style={{ margin: "16px 0 8px" }}>Signals</div>

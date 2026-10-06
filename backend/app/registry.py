@@ -2,6 +2,10 @@ from collections.abc import Mapping
 
 from .schemas import AppDefinition
 
+NFL_METRICS = ("last_activity_at", "data_freshness_at", "picks_total", "games_total")
+# Dates and counts only: no dollar amounts, tickers, accounts or P&L (see CLAUDE.md).
+PORTFOLIO_METRICS = ("last_transaction_date", "transactions_total", "imports_total")
+
 _REGISTRY: Mapping[str, tuple[AppDefinition, ...]] = {
     "local": (
         AppDefinition(
@@ -20,6 +24,8 @@ _REGISTRY: Mapping[str, tuple[AppDefinition, ...]] = {
             product_url="http://127.0.0.1:5173",
             health_url="http://127.0.0.1:8001/api/v1/health",
             readiness_url="http://127.0.0.1:8001/api/v1/health/ready",
+            metrics_url="http://127.0.0.1:8001/api/v1/health/metrics",
+            metric_allowlist=NFL_METRICS,
         ),
         AppDefinition(
             id="betting-aggregator",
@@ -54,6 +60,7 @@ _REGISTRY: Mapping[str, tuple[AppDefinition, ...]] = {
             health_url="http://127.0.0.1:8004/api/v1/health",
             readiness_url="http://127.0.0.1:8004/api/v1/health/ready",
             metrics_url="http://127.0.0.1:8004/api/v1/health/metrics",
+            metric_allowlist=("last_activity_at", "sessions_logged_total"),
         ),
         AppDefinition(
             id="portfolio-analysis",
@@ -63,6 +70,9 @@ _REGISTRY: Mapping[str, tuple[AppDefinition, ...]] = {
             product_url="http://127.0.0.1:5176",
             health_url="http://127.0.0.1:8005/api/v1/health",
             readiness_url="http://127.0.0.1:8005/api/v1/health/ready",
+            metrics_url="http://127.0.0.1:8005/api/v1/health/metrics",
+            metric_allowlist=PORTFOLIO_METRICS,
+            metrics_token_setting="portfolio_metrics_token",
         ),
     ),
     "production": (
@@ -76,6 +86,12 @@ _REGISTRY: Mapping[str, tuple[AppDefinition, ...]] = {
             health_url="https://vinyl-api.fly.dev/health",
             readiness_url="https://vinyl-api.fly.dev/health/ready",
             metrics_url="https://vinyl-api.fly.dev/health/metrics",
+            metric_allowlist=(
+                "last_activity_at",
+                "data_freshness_at",
+                "listing_count",
+                "play_count",
+            ),
         ),
         AppDefinition(
             id="nfl-confidence",
@@ -86,6 +102,8 @@ _REGISTRY: Mapping[str, tuple[AppDefinition, ...]] = {
             product_url="https://nfl-confidence-web.fly.dev/",
             health_url="https://nfl-confidence-web.fly.dev/api/v1/health",
             readiness_url="https://nfl-confidence-web.fly.dev/api/v1/health/ready",
+            metrics_url="https://nfl-confidence-web.fly.dev/api/v1/health/metrics",
+            metric_allowlist=NFL_METRICS,
         ),
         AppDefinition(
             id="betting-aggregator",
@@ -101,7 +119,6 @@ _REGISTRY: Mapping[str, tuple[AppDefinition, ...]] = {
                 "data_freshness_at",
                 "event_count",
                 "cache_hit",
-                "quota_remaining",
             ),
         ),
         AppDefinition(
@@ -122,6 +139,7 @@ _REGISTRY: Mapping[str, tuple[AppDefinition, ...]] = {
             health_url="https://isilver-gym-tracker-api.fly.dev/api/v1/health",
             readiness_url="https://isilver-gym-tracker-api.fly.dev/api/v1/health/ready",
             metrics_url="https://isilver-gym-tracker-api.fly.dev/api/v1/health/metrics",
+            metric_allowlist=("last_activity_at", "sessions_logged_total"),
         ),
         AppDefinition(
             id="portfolio-analysis",
@@ -132,6 +150,9 @@ _REGISTRY: Mapping[str, tuple[AppDefinition, ...]] = {
             product_url="https://portfolio-analysis-api.fly.dev/",
             health_url="https://portfolio-analysis-api.fly.dev/api/v1/health",
             readiness_url="https://portfolio-analysis-api.fly.dev/api/v1/health/ready",
+            metrics_url="https://portfolio-analysis-api.fly.dev/api/v1/health/metrics",
+            metric_allowlist=PORTFOLIO_METRICS,
+            metrics_token_setting="portfolio_metrics_token",
         ),
     ),
 }
