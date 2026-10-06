@@ -509,7 +509,7 @@ button.tab-link { background: transparent; border-left: 0; border-right: 0; bord
 .kb-search { width: 100%; max-width: 420px; }
 .kb-graph { width: 100%; height: 480px; background: var(--subtle); border: 1px solid var(--border); border-radius: var(--radius); }
 .kb-graph text { fill: var(--text-muted); font-size: 10px; pointer-events: none; }
-.kb-graph .node-wikis { fill: var(--accent); } .kb-graph .node-knowledge { fill: var(--info); }
+.kb-graph .node-wikis { fill: var(--accent); } .kb-graph .node-knowledge { fill: var(--neutral); }
 .kb-graph .node-projects { fill: var(--success); } .kb-graph .node-questions { fill: var(--warning); }
 .kb-graph .node-current { stroke: var(--text); stroke-width: 2; }
 .kb-graph line { stroke: var(--border-strong); }
@@ -518,3 +518,17 @@ button.tab-link { background: transparent; border-left: 0; border-right: 0; bord
   .wiki-refs ul { columns: 1; }
   .wiki-preview { width: 220px; }
 }
+
+/* Interactive graph */
+.kb-graph-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin: 8px 0; }
+.kb-graph-controls label { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); cursor: pointer; }
+.kb-swatch { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.swatch-wikis { background: var(--accent); } .swatch-knowledge { background: var(--neutral); }
+.swatch-projects { background: var(--success); } .swatch-questions { background: var(--warning); }
+.kb-graph { touch-action: none; }
+.kb-graph circle { cursor: grab; transition: opacity 120ms ease; }
+.kb-graph circle:active { cursor: grabbing; }
+.kb-graph line { transition: opacity 120ms ease; }
+.kb-graph .dim { opacity: 0.12; }
+.kb-graph text { fill: var(--text); }
+@media (prefers-reduced-motion: reduce) { .kb-graph circle, .kb-graph line { transition: none; } }
