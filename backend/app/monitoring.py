@@ -312,7 +312,12 @@ class Monitor:
             headers["X-Metrics-Token"] = token
         try:
             response = await client.get(
-                str(app.metrics_url), headers=headers, timeout=app.timeout_seconds
+                str(app.metrics_url),
+                headers=headers,
+                timeout=app.timeout_seconds,
+                # httpx strips only Authorization on cross-origin redirects, so a custom
+                # token header must never be sent through one.
+                follow_redirects=not headers,
             )
             if response.status_code < 200 or response.status_code >= 300:
                 return "down", metrics, None

@@ -205,6 +205,29 @@ def test_metrics_token_is_sent_only_to_the_metrics_url() -> None:
     assert result.metrics_state == "up"
 
 
+def test_metrics_token_is_never_forwarded_on_a_redirect() -> None:
+    tokens_seen: dict[str, str | None] = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        tokens_seen[request.url.host] = request.headers.get("x-metrics-token")
+        if request.url.host == "m.example.com":
+            return httpx.Response(302, headers={"location": "https://evil.example.net/steal"})
+        return httpx.Response(200, json={"status": "ok"})
+
+    async def run_check() -> object:
+        # Same client config the dashboard uses: redirects are followed by default.
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(handler), follow_redirects=True
+        ) as client:
+            monitor = Monitor(settings=Settings(portfolio_metrics_token="tok"))
+            return await monitor.check_app(client, _token_app())
+
+    result = asyncio.run(run_check())
+
+    assert "evil.example.net" not in tokens_seen
+    assert result.metrics == {} and result.metrics_state == "down"
+
+
 def test_unset_metrics_token_skips_the_request_without_degrading() -> None:
     hosts: list[str] = []
 
