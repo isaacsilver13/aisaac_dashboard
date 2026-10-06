@@ -33,7 +33,7 @@ const columns: Column<Task>[] = [
 
 export default function Tasks() {
   const repos = useAsyncData(fetchAnalytics);
-  const incidents = useAsyncData(fetchIncidents);
+  const incidents = useAsyncData(() => fetchIncidents());
 
   const tasks: Task[] = [
     ...(repos.data ?? []).flatMap((r) =>

@@ -41,7 +41,7 @@ const incidentColumns: Column<Incident>[] = [
 export function HealthTab({ appId }: { appId: string }) {
   const [range, setRange] = useState<HistoryRange>("24h");
   const history = useAsyncData(useCallback(() => fetchHealthHistory(appId, range), [appId, range]));
-  const incidents = useAsyncData(fetchIncidents);
+  const incidents = useAsyncData(() => fetchIncidents());
 
   const summary = history.data?.summary;
   const points = history.data?.points ?? [];
