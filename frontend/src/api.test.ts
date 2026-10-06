@@ -1,6 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { fetchAgents, fetchAnalytics, fetchComsEvents, fetchDashboard } from "./api";
+import {
+  fetchAgents,
+  fetchAnalytics,
+  fetchComsEvents,
+  fetchDashboard,
+  fetchIncidents,
+  resolveIncident,
+} from "./api";
 
 const response = {
   profile: "local",
@@ -137,5 +144,42 @@ describe("fetchComsEvents", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("secret body", { status: 500 })));
 
     await expect(fetchComsEvents()).rejects.toThrow("Coms request failed with HTTP 500.");
+  });
+});
+
+describe("incident authorization headers", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+  });
+
+  it("sends the read token when listing incidents", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response("[]", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await fetchIncidents("read-abc");
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/incidents", {
+      headers: { Accept: "application/json", "X-Dashboard-Token": "read-abc" },
+    });
+  });
+
+  it("resolves with the write token and never the read token", async () => {
+    window.localStorage.setItem("aisaac.dashboardToken", "read-abc");
+    window.sessionStorage.setItem("aisaac.dashboardWriteToken", "write-xyz");
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await resolveIncident(7, "done");
+
+    const init = fetchMock.mock.calls[0][1] as { headers: Record<string, string> };
+    expect(init.headers["X-Dashboard-Write-Token"]).toBe("write-xyz");
+    expect(JSON.stringify(init.headers)).not.toContain("read-abc");
+  });
+
+  it("surfaces an unauthorized resolve as an error", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{}", { status: 401 })));
+    await expect(resolveIncident(7, undefined, "bad")).rejects.toThrow("HTTP 401");
   });
 });

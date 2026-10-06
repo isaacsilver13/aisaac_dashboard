@@ -119,10 +119,15 @@ def app_metrics_history(
     return health_history.metrics_history(app_id, range)
 
 
+def _secrets_match(supplied: Optional[str], expected: str) -> bool:
+    # Constant-time; compare bytes so a non-ASCII header can't raise TypeError (a 500).
+    return hmac.compare_digest((supplied or "").encode(), expected.encode())
+
+
 def _require_internal_secret(x_internal_secret: Optional[str] = Header(default=None)) -> None:
     if not settings.internal_report_secret:
         raise HTTPException(503, "Push reporting is not configured on this deployment.")
-    if x_internal_secret != settings.internal_report_secret:
+    if not _secrets_match(x_internal_secret, settings.internal_report_secret):
         raise HTTPException(401, "Invalid or missing internal report secret.")
 
 
@@ -134,8 +139,15 @@ def internal_report(payload: PushReportIn) -> None:
 def _require_read_token(x_dashboard_token: Optional[str] = Header(default=None)) -> None:
     if not settings.dashboard_read_token:
         raise HTTPException(503, "Financial figures are not configured on this deployment.")
-    if not hmac.compare_digest(x_dashboard_token or "", settings.dashboard_read_token):
+    if not _secrets_match(x_dashboard_token, settings.dashboard_read_token):
         raise HTTPException(401, "Invalid or missing dashboard token.")
+
+
+def _require_write_token(x_dashboard_write_token: Optional[str] = Header(default=None)) -> None:
+    if not settings.dashboard_write_token:
+        raise HTTPException(503, "Dashboard write actions are not configured on this deployment.")
+    if not _secrets_match(x_dashboard_write_token, settings.dashboard_write_token):
+        raise HTTPException(401, "Invalid or missing dashboard write token.")
 
 
 async def _fly_lookup(app_id: str, call) -> dict:
@@ -224,12 +236,20 @@ def financials() -> FinancialSnapshot:
     )
 
 
-@app.get("/api/v1/incidents", response_model=list[IncidentOut])
+@app.get(
+    "/api/v1/incidents",
+    response_model=list[IncidentOut],
+    dependencies=[Depends(_require_read_token)],
+)
 def list_incidents(app_id: Optional[str] = Query(default=None)) -> list[IncidentOut]:
     return [IncidentOut.model_validate(dict(row)) for row in incidents.list_incidents(app_id)]
 
 
-@app.post("/api/v1/incidents/{incident_id}/resolve", status_code=204)
+@app.post(
+    "/api/v1/incidents/{incident_id}/resolve",
+    status_code=204,
+    dependencies=[Depends(_require_write_token)],
+)
 def resolve_incident(incident_id: int, payload: ResolveIncidentIn) -> None:
     incidents.resolve_incident(incident_id, notes=payload.notes)
 
@@ -294,6 +314,7 @@ def second_brain_sync(payload: SecondBrainSyncIn) -> None:
 # (setting, label, what it enables). Values are never returned, only whether each is set.
 _CONFIG_CHECKS = (
     ("dashboard_read_token", "Dashboard read token", "Knowledge, financials, deployments, logs"),
+    ("dashboard_write_token", "Dashboard write token", "Resolving incidents"),
     ("internal_report_secret", "Internal report secret", "Push jobs and heartbeats"),
     ("fly_api_token", "Fly API token", "Deployments and logs tabs"),
     ("github_token", "GitHub token", "Repo, PR and CI data (rate limits without it)"),

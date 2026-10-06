@@ -1,4 +1,5 @@
 import type { AutomationStatus, ConfigItem, MetricsHistory, AppLogs, Deployments, HealthHistory, HistoryRange, AgentSummary, CIEvent, DashboardResponse, FinancialSnapshot, Incident, Note, NoteListItem, Portal, RepoActivity, SecondBrainSummary, VaultGraph } from "./types";
+import { readToken, readWriteToken } from "./token";
 
 export class FinancialsAuthError extends Error {}
 
@@ -26,18 +27,24 @@ export async function fetchDashboard(forceRefresh = false): Promise<DashboardRes
   return (await response.json()) as DashboardResponse;
 }
 
-export async function fetchIncidents(): Promise<Incident[]> {
-  const response = await fetch("/api/v1/incidents", { headers: { Accept: "application/json" } });
+export async function fetchIncidents(token = readToken()): Promise<Incident[]> {
+  const response = await fetch("/api/v1/incidents", {
+    headers: { Accept: "application/json", "X-Dashboard-Token": token },
+  });
   if (!response.ok) {
     throw new Error(`Incidents request failed with HTTP ${response.status}.`);
   }
   return (await response.json()) as Incident[];
 }
 
-export async function resolveIncident(incidentId: number, notes?: string): Promise<void> {
+export async function resolveIncident(
+  incidentId: number,
+  notes?: string,
+  writeToken = readWriteToken(),
+): Promise<void> {
   const response = await fetch(`/api/v1/incidents/${incidentId}/resolve`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "X-Dashboard-Write-Token": writeToken },
     body: JSON.stringify({ notes: notes ?? null }),
   });
   if (!response.ok) {
