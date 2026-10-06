@@ -223,6 +223,7 @@ class NoteIn(BaseModel):
     aliases: list[str] = []
     status: Optional[str] = None
     body: str
+    frontmatter: dict[str, str] = {}
 
 
 class SecondBrainSyncIn(BaseModel):

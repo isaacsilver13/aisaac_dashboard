@@ -49,7 +49,7 @@ invoice to land in `(unattributed)` until you refine the estimate.
 
 ## second_brain_push.py
 
-Syncs the Obsidian vault (`wikis/`, `knowledge/`, `projects/`, `questions/`) to the dashboard's Second Brain page and Command Center card. Vault path: `SECOND_BRAIN_PATH` (default `~/second-brain`). It aborts if any note holds a credential-shaped string. Run after committing vault changes:
+Syncs the Obsidian vault (`wikis/`, `knowledge/`, `projects/`, `questions/`) to the dashboard's Second Brain page and Command Center card. Vault path: `SECOND_BRAIN_PATH` (default `~/second-brain`). Each note's frontmatter (type, updated, ...) is forwarded too, and scanned like the body. It aborts if any note holds a credential-shaped string. Run after committing vault changes:
 
     python scripts/second_brain_push.py [--dry-run]
 

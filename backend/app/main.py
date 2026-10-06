@@ -335,6 +335,16 @@ def second_brain_notes(q: str = "", folder: str = "") -> list[dict]:
     return second_brain_store.list_notes(q, folder)
 
 
+@app.get("/api/v1/second-brain/portals", dependencies=[Depends(_require_read_token)])
+def second_brain_portals() -> list[dict]:
+    return second_brain_store.portals()
+
+
+@app.get("/api/v1/second-brain/graph", dependencies=[Depends(_require_read_token)])
+def second_brain_graph() -> dict:
+    return second_brain_store.graph()
+
+
 @app.get("/api/v1/second-brain/notes/{path:path}", dependencies=[Depends(_require_read_token)])
 def second_brain_note(path: str) -> dict:
     note = second_brain_store.get_note(path)

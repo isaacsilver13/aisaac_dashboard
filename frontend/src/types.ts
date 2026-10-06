@@ -139,10 +139,37 @@ export interface NoteListItem {
   title: string;
   aliases: string[];
   status: string | null;
+  updated: string | null;
 }
 
-export interface Note extends NoteListItem {
+export interface NoteRef {
+  path: string;
+  title: string;
+  folder: string;
+}
+
+export interface Note extends Omit<NoteListItem, "updated"> {
   body: string;
+  frontmatter: Record<string, string>;
+  /** Lowercased wikilink target -> note path (null = no such note). */
+  link_map: Record<string, string | null>;
+  links: NoteRef[];
+  backlinks: NoteRef[];
+  previews: Record<string, string>;
+  portal: string;
+}
+
+export interface Portal {
+  id: string;
+  title: string;
+  count: number;
+  index_path: string | null;
+  description: string;
+}
+
+export interface VaultGraph {
+  nodes: NoteRef[];
+  edges: [string, string][];
 }
 
 export type HistoryRange = "24h" | "7d" | "30d";
