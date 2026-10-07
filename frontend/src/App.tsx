@@ -6,6 +6,7 @@ import Agents from "./pages/Agents";
 import Analytics from "./pages/Analytics";
 import CommandCenter from "./pages/CommandCenter";
 import Coms from "./pages/Coms";
+import News from "./pages/News";
 import SecondBrain from "./pages/SecondBrain";
 import { ApplicationPage, ComingSoon, NotFound, RedirectKeepSearch } from "./pages/stubs";
 import Settings from "./pages/Settings";
@@ -24,6 +25,7 @@ export default function App() {
         <Route path="/github/repositories" element={<Repositories />} />
         <Route path="/github/repositories/:repo" element={<RepositoryDetail />} />
         <Route path="/tasks" element={<Tasks />} />
+        <Route path="/news" element={<News />} />
         <Route path="/automations" element={<Automations />} />
         <Route path="/knowledge/*" element={<SecondBrain />} />
         <Route path="/settings" element={<Settings />} />

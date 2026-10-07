@@ -12,7 +12,9 @@ async def _request(method: str, path: str, **kwargs) -> httpx.Response:
         return await client.request(method, path, **kwargs)
 
 
-def _post_ci_report(app_id: str, secret: str = "test-secret") -> httpx.Response:
+def _post_ci_report(
+    app_id: str, secret: str = "test-secret", ci_status: str = "success"
+) -> httpx.Response:
     return asyncio.run(
         _request(
             "POST",
@@ -21,7 +23,7 @@ def _post_ci_report(app_id: str, secret: str = "test-secret") -> httpx.Response:
                 "app_id": app_id,
                 "repo": "isaacsilver13/vinyl",
                 "event_type": "status_report",
-                "ci_status": "success",
+                "ci_status": ci_status,
                 "details": "all clear",
             },
             headers={"x-internal-secret": secret},
@@ -40,18 +42,28 @@ def _setup(monkeypatch, tmp_path, debounce_minutes=10.0):
     return calls
 
 
-def test_first_event_for_app_always_notifies(monkeypatch, tmp_path) -> None:
+def test_successful_ci_report_is_recorded_without_notification(monkeypatch, tmp_path) -> None:
     calls = _setup(monkeypatch, tmp_path)
     monkeypatch.setattr(main.time, "monotonic", lambda: 1000.0)
 
     response = _post_ci_report("vinyl")
 
     assert response.status_code == 204
-    assert len(calls) == 1
+    assert calls == []
 
     history = asyncio.run(_request("GET", "/api/v1/coms")).json()
     assert len(history) == 1
-    assert history[0]["notified"] is True
+    assert history[0]["notified"] is False
+
+
+def test_first_failed_ci_report_notifies(monkeypatch, tmp_path) -> None:
+    calls = _setup(monkeypatch, tmp_path)
+    monkeypatch.setattr(main.time, "monotonic", lambda: 1000.0)
+
+    response = _post_ci_report("vinyl", ci_status="failure")
+
+    assert response.status_code == 204
+    assert len(calls) == 1
 
 
 def test_second_event_within_debounce_window_records_but_does_not_notify(
@@ -61,9 +73,9 @@ def test_second_event_within_debounce_window_records_but_does_not_notify(
     clock = {"now": 1000.0}
     monkeypatch.setattr(main.time, "monotonic", lambda: clock["now"])
 
-    _post_ci_report("vinyl")
+    _post_ci_report("vinyl", ci_status="failure")
     clock["now"] += 60  # 1 minute later, well inside the 10-minute window
-    response = _post_ci_report("vinyl")
+    response = _post_ci_report("vinyl", ci_status="failure")
 
     assert response.status_code == 204
     assert len(calls) == 1
@@ -78,9 +90,9 @@ def test_event_after_debounce_window_elapses_notifies_again(monkeypatch, tmp_pat
     clock = {"now": 1000.0}
     monkeypatch.setattr(main.time, "monotonic", lambda: clock["now"])
 
-    _post_ci_report("vinyl")
+    _post_ci_report("vinyl", ci_status="failure")
     clock["now"] += 601  # just past the 10-minute (600s) window
-    _post_ci_report("vinyl")
+    _post_ci_report("vinyl", ci_status="failure")
 
     assert len(calls) == 2
 
@@ -89,7 +101,7 @@ def test_debounce_is_per_app_id(monkeypatch, tmp_path) -> None:
     calls = _setup(monkeypatch, tmp_path, debounce_minutes=10.0)
     monkeypatch.setattr(main.time, "monotonic", lambda: 1000.0)
 
-    _post_ci_report("vinyl")
-    _post_ci_report("nba-prediction")
+    _post_ci_report("vinyl", ci_status="failure")
+    _post_ci_report("nba-prediction", ci_status="failure")
 
     assert len(calls) == 2

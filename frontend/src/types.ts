@@ -239,3 +239,32 @@ export interface MetricsHistory {
   range: HistoryRange;
   series: Record<string, { t: string; value: number }[]>;
 }
+
+export type NewsState = "new" | "saved" | "dismissed";
+
+export interface NewsItem {
+  id: number;
+  url: string;
+  title: string;
+  source: string;
+  topic: string;
+  published_at: string;
+  score: number;
+  why: string;
+  state: NewsState;
+}
+
+export interface NewsFeedStatus {
+  feed_url: string;
+  source: string;
+  last_ok_at: string | null;
+  last_attempt_at: string | null;
+  last_error: string | null;
+}
+
+export interface NewsResponse {
+  topics: string[];
+  items: NewsItem[];
+  sources: NewsFeedStatus[];
+  freshness_at: string | null;
+}

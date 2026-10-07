@@ -6,13 +6,13 @@ import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 import httpx
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from . import (
     automations,
@@ -22,10 +22,14 @@ from . import (
     incidents,
     metrics_store,
     notify,
+    personal_digest,
+    personal_news,
+    personal_store,
     reports,
     second_brain_store,
 )
 from .agents_registry import get_agents
+from .alerts import send_email
 from .config import get_settings
 from .github_monitor import GitHubMonitor
 from .github_registry import get_repos
@@ -57,6 +61,7 @@ incidents.configure(settings.incidents_db_path)
 ci_events.configure(settings.ci_events_db_path)
 metrics_store.configure(settings.metrics_db_path)
 second_brain_store.configure(settings.second_brain_db_path)
+personal_store.configure(settings.personal_db_path)
 health_history.configure(settings.health_db_path, settings.health_retention_days)
 _last_notified_at: dict[str, float] = {}
 monitor = Monitor(cache_ttl_seconds=settings.cache_ttl_seconds, settings=settings)
@@ -269,7 +274,9 @@ async def analytics(force_refresh: bool = Query(default=False)) -> list[RepoActi
 def internal_ci_report(payload: CIReportIn) -> None:
     now = time.monotonic()
     last = _last_notified_at.get(payload.app_id)
-    should_notify = last is None or (now - last) >= settings.coms_debounce_minutes * 60
+    should_notify = payload.ci_status == "failure" and (
+        last is None or (now - last) >= settings.coms_debounce_minutes * 60
+    )
 
     ci_events.record_event(
         app_id=payload.app_id,
@@ -309,6 +316,52 @@ def get_runbook(app_id: str) -> str:
 )
 def second_brain_sync(payload: SecondBrainSyncIn) -> None:
     second_brain_store.replace_all(payload.meta, [n.model_dump() for n in payload.notes])
+
+
+# --- Private news feed and daily digest -------------------------------------------------
+
+
+class NewsStateIn(BaseModel):
+    state: Literal["new", "saved", "dismissed"]
+
+
+@app.get("/api/v1/personal/news", dependencies=[Depends(_require_read_token)])
+def personal_news_list(
+    topic: Optional[str] = Query(default=None),
+    state: Optional[Literal["new", "saved", "dismissed"]] = Query(default=None),
+) -> dict:
+    if topic and topic not in personal_news.TOPICS:
+        raise HTTPException(422, "Unknown topic.")
+    return {
+        "topics": personal_news.TOPICS,
+        "items": personal_store.list_items(topic=topic, state=state),
+        "sources": personal_store.list_feeds(),
+        "freshness_at": personal_store.freshness_at(),
+    }
+
+
+@app.post("/api/v1/personal/news/refresh", dependencies=[Depends(_require_read_token)])
+def personal_news_refresh() -> dict:
+    personal_news.refresh()
+    return {"freshness_at": personal_store.freshness_at()}
+
+
+@app.post(
+    "/api/v1/personal/news/{item_id}/state",
+    status_code=204,
+    dependencies=[Depends(_require_write_token)],
+)
+def personal_news_state(item_id: int, payload: NewsStateIn) -> None:
+    if not personal_store.set_state(item_id, payload.state):
+        raise HTTPException(404, "Unknown article.")
+
+
+@app.post("/internal/daily-digest/send", dependencies=[Depends(_require_internal_secret)])
+def daily_digest_send(dry_run: bool = Query(default=False)) -> dict:
+    return personal_digest.run(
+        dry_run=dry_run,
+        send=lambda subject, text, html: send_email(settings, subject, text, html),
+    )
 
 
 # (setting, label, what it enables). Values are never returned, only whether each is set.
