@@ -188,3 +188,9 @@ def test_keywords_match_whole_words_and_digest_caps_per_topic():
             "published_at": NOW.isoformat(), "score": 1.0, "why": "w",
         })
     assert len(personal_digest.pick_items()) == personal_digest.PER_TOPIC
+
+
+def test_utf16_doctype_rejected():
+    doc = '<!DOCTYPE x [<!ENTITY a "b">]><rss version="2.0"/>'.encode("utf-16")
+    with pytest.raises(ValueError):
+        personal_news.parse_feed(doc)

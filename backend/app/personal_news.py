@@ -82,7 +82,9 @@ def _parse_date(text: Optional[str]) -> Optional[datetime]:
 def parse_feed(xml_bytes: bytes) -> list[dict]:
     """Return [{title, url, published_at}] from RSS 2.0, RSS 1.0 or Atom; raises on bad XML."""
     # Feeds never need a DTD; refusing one rules out entity-expansion/XXE without a new dependency.
-    if b"<!DOCTYPE" in xml_bytes[:4096].upper() or b"<!ENTITY" in xml_bytes.upper():
+    # NUL bytes mean UTF-16/32, which would hide "<!DOCTYPE" from the byte match below.
+    upper = xml_bytes.upper()
+    if b"\x00" in xml_bytes or b"<!DOCTYPE" in upper or b"<!ENTITY" in upper:
         raise ValueError("DTD not allowed")
     root = ET.fromstring(xml_bytes)
     out = []
