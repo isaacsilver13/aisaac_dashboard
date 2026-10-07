@@ -1,4 +1,4 @@
-import type { AutomationStatus, ConfigItem, MetricsHistory, AppLogs, Deployments, HealthHistory, HistoryRange, AgentSummary, CIEvent, DashboardResponse, FinancialSnapshot, Incident, Note, NoteListItem, Portal, RepoActivity, SecondBrainSummary, VaultGraph } from "./types";
+import type { NewsResponse, NewsState, AutomationStatus, ConfigItem, MetricsHistory, AppLogs, Deployments, HealthHistory, HistoryRange, AgentSummary, CIEvent, DashboardResponse, FinancialSnapshot, Incident, Note, NoteListItem, Portal, RepoActivity, SecondBrainSummary, VaultGraph } from "./types";
 import { readToken, readWriteToken } from "./token";
 
 export class FinancialsAuthError extends Error {}
@@ -167,3 +167,35 @@ export async function fetchMetricsHistory(appId: string, range: HistoryRange): P
 export const fetchPortals = (token: string) => secondBrainGet<Portal[]>("portals", token);
 
 export const fetchGraph = (token: string) => secondBrainGet<VaultGraph>("graph", token);
+
+const STALE_NEWS_MS = 60 * 60 * 1000;
+
+async function getNews(token: string): Promise<NewsResponse> {
+  const response = await fetch("/api/v1/personal/news", {
+    headers: { Accept: "application/json", "X-Dashboard-Token": token },
+  });
+  if (response.status === 401) throw new FinancialsAuthError("Invalid dashboard token.");
+  if (!response.ok) throw new Error(`News request failed with HTTP ${response.status}.`);
+  return (await response.json()) as NewsResponse;
+}
+
+/** Loads the stored snapshot; refreshes upstream first on a manual request or when it is over an hour old. */
+export async function fetchNews(token: string, forceRefresh = false): Promise<NewsResponse> {
+  let news = await getNews(token);
+  const age = news.freshness_at ? Date.now() - new Date(news.freshness_at).getTime() : Infinity;
+  if (forceRefresh || age > STALE_NEWS_MS) {
+    // A failed refresh must not hide the last good snapshot; per-feed errors show in `sources`.
+    await fetch("/api/v1/personal/news/refresh", { method: "POST", headers: { "X-Dashboard-Token": token } }).catch(() => undefined);
+    news = await getNews(token);
+  }
+  return news;
+}
+
+export async function setNewsState(itemId: number, state: NewsState, writeToken = readWriteToken()): Promise<void> {
+  const response = await fetch(`/api/v1/personal/news/${itemId}/state`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Dashboard-Write-Token": writeToken },
+    body: JSON.stringify({ state }),
+  });
+  if (!response.ok) throw new Error(`Update failed with HTTP ${response.status}.`);
+}

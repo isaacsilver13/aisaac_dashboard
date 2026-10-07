@@ -29,6 +29,18 @@ const dateWithYearFormatter = new Intl.DateTimeFormat(undefined, {
   minute: "2-digit",
 });
 
+const centralTimestampFormatter = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/Chicago",
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: true,
+  timeZoneName: "short",
+});
+
 function startOfDay(value: Date): number {
   return new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime();
 }
@@ -58,4 +70,18 @@ export function humanizeTimestamp(value: string, now = new Date()): string {
 export function exactTimestamp(value: string): string {
   const timestamp = new Date(value);
   return Number.isNaN(timestamp.getTime()) ? value : exactFormatter.format(timestamp);
+}
+
+/** A precise Central-time timestamp for dashboard refresh metadata. */
+export function centralTimestamp(value: string): string {
+  const timestamp = new Date(value);
+  if (Number.isNaN(timestamp.getTime())) return value;
+
+  const parts = Object.fromEntries(
+    centralTimestampFormatter
+      .formatToParts(timestamp)
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, part.value]),
+  );
+  return `${parts.month} ${parts.day}, ${parts.year} ${parts.hour}:${parts.minute}:${parts.second}${parts.dayPeriod} ${parts.timeZoneName}`;
 }

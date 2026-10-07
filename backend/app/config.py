@@ -55,6 +55,9 @@ class Settings(BaseSettings):
     health_retention_days: float = 30.0
     health_poll_interval_seconds: float = 0.0
 
+    # Private news feed and daily-digest runs (read/write-token gated; digest via internal secret).
+    personal_db_path: str = "./aisaac_personal.db"
+
     # Second-brain vault notes pushed by scripts/second_brain_push.py (read-token gated).
     second_brain_db_path: str = "./aisaac_second_brain.db"
 

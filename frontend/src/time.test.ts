@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { exactTimestamp, humanizeTimestamp } from "./time";
+import { centralTimestamp, exactTimestamp, humanizeTimestamp } from "./time";
 
 const NOW = new Date(2026, 9, 6, 14, 0, 0);
 
@@ -17,5 +17,10 @@ describe("humanizeTimestamp", () => {
   it("keeps invalid timestamps explicit", () => {
     expect(humanizeTimestamp("not-a-date", NOW)).toBe("Unknown time");
     expect(exactTimestamp("not-a-date")).toBe("not-a-date");
+  });
+
+  it("formats precise dashboard metadata in Central time", () => {
+    expect(centralTimestamp("2026-01-01T18:30:00Z")).toBe("Jan 1, 2026 12:30:00PM CST");
+    expect(centralTimestamp("2026-07-01T17:30:00Z")).toBe("Jul 1, 2026 12:30:00PM CDT");
   });
 });

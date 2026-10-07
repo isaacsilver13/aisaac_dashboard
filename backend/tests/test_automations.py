@@ -20,6 +20,7 @@ def test_snapshot_flags_never_ok_stale_and_disabled(tmp_path, monkeypatch):
     assert rows["codex-usage"]["status"] == "never"
     assert rows["health-poll"]["status"] == "disabled"
     assert rows["ci-events"]["status"] == "never"
+    assert rows["ci-events"]["expected_hours"] == 26.0
 
     class Fresh(dict):
         pass
@@ -38,3 +39,15 @@ def test_snapshot_flags_never_ok_stale_and_disabled(tmp_path, monkeypatch):
 def test_poller_enabled_reads_latest_check(tmp_path):
     health_history.configure(str(tmp_path / "h.db"))
     assert _by_id(automations.snapshot(60, now=NOW))["health-poll"]["status"] == "never"
+
+
+def test_ci_reports_become_stale_after_daily_freshness_window(tmp_path, monkeypatch):
+    ci_events.configure(str(tmp_path / "c.db"))
+    monkeypatch.setattr(ci_events, "_now", lambda: (NOW - timedelta(hours=27)).isoformat())
+    ci_events.record_event(
+        "vinyl", "isaacsilver13/vinyl", "status_report", "success", "all clear", False
+    )
+
+    rows = _by_id(automations.snapshot(0, now=NOW))
+
+    assert rows["ci-events"]["status"] == "stale"

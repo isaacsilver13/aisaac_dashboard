@@ -28,9 +28,14 @@ def send_transition_alert(
 
     body = f"{app_name} transitioned from '{from_state}' to '{to_state}'."
 
+    send_email(settings, subject, body)
+
+
+def send_email(settings: Settings, subject: str, text: str, html: str | None = None) -> bool:
+    """Send via Resend to ALERT_TO_EMAIL. Returns True only if Resend accepted it."""
     if not settings.resend_api_key or not settings.alert_to_email:
-        logger.warning("ALERT (not sent, no Resend config): %s -- %s", subject, body)
-        return
+        logger.warning("EMAIL (not sent, no Resend config): %s -- %s", subject, text[:200])
+        return False
 
     try:
         response = httpx.post(
@@ -40,10 +45,13 @@ def send_transition_alert(
                 "from": settings.alert_from_email,
                 "to": [settings.alert_to_email],
                 "subject": subject,
-                "text": body,
+                "text": text,
+                **({"html": html} if html else {}),
             },
             timeout=10.0,
         )
         response.raise_for_status()
     except httpx.HTTPError:
-        logger.exception("Failed to send transition alert via Resend: %s", subject)
+        logger.exception("Failed to send email via Resend: %s", subject)
+        return False
+    return True

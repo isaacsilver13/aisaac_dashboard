@@ -13,15 +13,10 @@ import { ErrorState } from "../components/primitives/ErrorState";
 import { PageHeader } from "../components/primitives/PageHeader";
 import { Skeleton } from "../components/primitives/Skeleton";
 import { useAsyncData } from "../hooks/useAsyncData";
+import { centralTimestamp } from "../time";
 import type { DashboardResponse, HealthState, Incident } from "../types";
 
 const stateOrder: HealthState[] = ["down", "degraded", "slow", "stale", "up", "unavailable"];
-
-function formatRefreshTime(value: string): string {
-  return new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit", second: "2-digit" }).format(
-    new Date(value),
-  );
-}
 
 interface CommandCenterData {
   dashboard: DashboardResponse;
@@ -55,7 +50,7 @@ export default function CommandCenter() {
       <PageHeader
         title="Everything at a Glance"
         description="A quiet pulse check for the apps that keep the week moving."
-        lastUpdated={dashboard ? formatRefreshTime(dashboard.refreshed_at) : undefined}
+        lastUpdated={dashboard ? centralTimestamp(dashboard.refreshed_at) : undefined}
         actions={
           <button className="refresh-button" type="button" onClick={() => void reload(true)} disabled={refreshing}>
             <Refresh width={16} height={16} className={refreshing ? "spin" : ""} aria-hidden="true" />
@@ -71,7 +66,7 @@ export default function CommandCenter() {
           <SystemOverview
             results={results}
             loading={loading}
-            lastChecked={dashboard ? formatRefreshTime(dashboard.refreshed_at) : undefined}
+            lastChecked={dashboard ? centralTimestamp(dashboard.refreshed_at) : undefined}
           />
           <AttentionPanel openIncidents={openIncidents} results={results} />
         </div>

@@ -57,8 +57,8 @@ def snapshot(poll_interval_seconds: float, now: Optional[datetime] = None) -> li
     ))
     events = ci_events.list_events(limit=1)
     rows.append(_row(
-        "ci-events", "CI event reports", "event", "GitHub Actions workflow (event-driven)",
-        events[0]["received_at"] if events else None, None, now,
+        "ci-events", "CI event reports", "event", "GitHub Actions daily workflow",
+        events[0]["received_at"] if events else None, 26.0, now,
     ))
     if poll_interval_seconds > 0:
         last = health_history.latest()
