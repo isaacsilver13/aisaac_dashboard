@@ -5,6 +5,7 @@ import { DeploymentsTab } from "../components/application/DeploymentsTab";
 import { LogsTab } from "../components/application/LogsTab";
 import { OverviewTab } from "../components/application/OverviewTab";
 import { HealthTab } from "../components/application/HealthTab";
+import { StackTab } from "../components/application/StackTab";
 import { EmptyState } from "../components/primitives/EmptyState";
 import { PageHeader } from "../components/primitives/PageHeader";
 
@@ -18,7 +19,7 @@ export function ComingSoon({ title }: { title: string }) {
   );
 }
 
-const APP_TABS = ["overview", "health", "deployments", "data", "logs"] as const;
+const APP_TABS = ["overview", "stack", "health", "deployments", "data", "logs"] as const;
 const capitalize = (text: string) => text.replace(/^\w/, (c) => c.toUpperCase());
 
 export function ApplicationPage() {
@@ -35,6 +36,8 @@ export function ApplicationPage() {
       </nav>
       {tab === "health" && appId ? (
         <HealthTab appId={appId} />
+      ) : tab === "stack" && appId ? (
+        <StackTab appId={appId} />
       ) : tab === "data" && appId ? (
         <DataTab appId={appId} />
       ) : tab === "deployments" && appId ? (

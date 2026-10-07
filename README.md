@@ -14,7 +14,7 @@ The monitor checks configured public endpoints server-side. It does not access a
 | Route | What it shows |
 |---|---|
 | `/` | Overview: system status, attention items, activity, financials, second-brain summary. |
-| `/applications/:id/{overview,health,deployments,data,logs}` | Per-app tabs. Health has uptime, latency and state history; Deployments and Logs read Fly; Data shows reported metrics and their history. |
+| `/applications/:id/{overview,stack,health,deployments,data,logs}` | Per-app tabs. Stack maps the observed request, deployment, data/provider, and monitoring flow; Health has uptime, latency and state history; Deployments and Logs read Fly; Data shows reported metrics and their history. |
 | `/github`, `/github/repositories[/:repo]` | Repo activity, repository list and per-repo detail. |
 | `/tasks` | Open pull requests and unresolved incidents. |
 | `/automations` | Last run and staleness of push jobs and background tasks (observed, not scheduled). |
@@ -30,6 +30,7 @@ Backend settings come from environment variables (`backend/app/config.py`). Secr
 | Variable | Enables |
 |---|---|
 | `DASHBOARD_READ_TOKEN` | Knowledge, financials, deployments, logs, automations, config status (sent as `X-Dashboard-Token`). |
+| `DASHBOARD_WRITE_TOKEN` | Resolving incidents (sent as `X-Dashboard-Write-Token`; keep distinct from the read token). Incident listing needs the read token. |
 | `INTERNAL_REPORT_SECRET` | Push jobs and heartbeats (`/internal/*`). |
 | `FLY_API_TOKEN` | Deployments and Logs tabs. Read-only org token: `fly tokens create readonly personal`. |
 | `GITHUB_TOKEN` | Repo, PR and CI data. |
@@ -40,6 +41,21 @@ Backend settings come from environment variables (`backend/app/config.py`). Secr
 To report Codex included usage, schedule `python scripts/push_codex_usage.py` every two hours on
 the signed-in Codex machine. It uses the local Codex app-server and the same AIsaac push settings
 as the other scripts; run it once with `--dry-run` before scheduling.
+
+### Connect GitHub
+
+GitHub data is fetched only by the backend; the browser never receives or stores a GitHub credential.
+Create a fine-grained personal access token restricted to the repositories in
+`backend/app/github_registry.py`, with read-only **Contents**, **Metadata**, **Issues**,
+**Pull requests**, and **Actions** permissions. Set it as the production secret:
+
+```powershell
+fly secrets set GITHUB_TOKEN=<fine-grained-read-only-token> -a aisaac-dashboard
+```
+
+Then open **Settings** with a dashboard read token. Backend configuration will show `GitHub token`
+as **Set** without revealing the token. The GitHub and repository pages can then load repository,
+pull-request, and CI data.
 
 ## History
 

@@ -28,6 +28,7 @@ export function AppCard({ result, index, openIncident, onIncidentResolved }: App
   const metricEntries = Object.entries(result.metrics).slice(0, 3);
   const [runbook, setRunbook] = useState<string | null | undefined>(undefined);
   const [resolving, setResolving] = useState(false);
+  const [resolveError, setResolveError] = useState<string | null>(null);
 
   async function handleViewRunbook() {
     if (runbook !== undefined) {
@@ -41,8 +42,11 @@ export function AppCard({ result, index, openIncident, onIncidentResolved }: App
     if (!openIncident) return;
     setResolving(true);
     try {
+      setResolveError(null);
       await resolveIncident(openIncident.id, "Resolved from AIsaac dashboard.");
       onIncidentResolved?.();
+    } catch {
+      setResolveError("Could not resolve: set the dashboard write token in Settings.");
     } finally {
       setResolving(false);
     }
@@ -129,6 +133,7 @@ export function AppCard({ result, index, openIncident, onIncidentResolved }: App
               </button>
             </div>
           </div>
+          {resolveError && <p role="alert">{resolveError}</p>}
           {runbook !== undefined && (
             <pre className="runbook-text">
               {runbook ?? "No runbook has been written for this app yet."}
