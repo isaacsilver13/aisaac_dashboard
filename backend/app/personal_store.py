@@ -36,6 +36,89 @@ CREATE TABLE IF NOT EXISTS news_sources (
     last_error TEXT
 );
 
+CREATE TABLE IF NOT EXISTS sports_events (
+    id TEXT PRIMARY KEY,
+    league TEXT NOT NULL,
+    home TEXT NOT NULL,
+    away TEXT NOT NULL,
+    home_score INTEGER,
+    away_score INTEGER,
+    status TEXT NOT NULL,
+    start_at TEXT NOT NULL,
+    home_conference TEXT,
+    away_conference TEXT,
+    home_rank INTEGER,
+    away_rank INTEGER,
+    poll_date TEXT,
+    url TEXT,
+    updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_sports_start ON sports_events (start_at);
+CREATE INDEX IF NOT EXISTS idx_sports_league ON sports_events (league, start_at);
+
+CREATE TABLE IF NOT EXISTS sports_refreshes (
+    provider TEXT PRIMARY KEY,
+    last_ok_at TEXT,
+    last_attempt_at TEXT,
+    last_error TEXT
+);
+
+CREATE TABLE IF NOT EXISTS shoe_watches (
+    id INTEGER PRIMARY KEY,
+    kind TEXT NOT NULL,
+    name TEXT NOT NULL,
+    keywords TEXT NOT NULL DEFAULT '',
+    size TEXT,
+    condition TEXT,
+    max_price REAL,
+    url TEXT,
+    archived INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS shoe_listings (
+    id INTEGER PRIMARY KEY,
+    watch_id INTEGER NOT NULL,
+    listing_key TEXT NOT NULL,
+    title TEXT NOT NULL,
+    price REAL,
+    prev_price REAL,
+    condition TEXT,
+    source TEXT NOT NULL,
+    url TEXT NOT NULL,
+    observed_at TEXT NOT NULL,
+    changed_at TEXT,
+    UNIQUE (watch_id, listing_key)
+);
+
+CREATE TABLE IF NOT EXISTS listing_snapshots (
+    id INTEGER PRIMARY KEY,
+    listing_id INTEGER NOT NULL,
+    price REAL,
+    observed_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_snapshots_listing ON listing_snapshots (listing_id, observed_at);
+
+CREATE TABLE IF NOT EXISTS oauth_connections (
+    provider TEXT PRIMARY KEY,
+    token_enc TEXT NOT NULL,
+    connected_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS own_items (
+    id INTEGER PRIMARY KEY,
+    provider TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    external_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    price REAL,
+    url TEXT,
+    occurred_at TEXT,
+    updated_at TEXT NOT NULL,
+    UNIQUE (provider, kind, external_id)
+);
+CREATE INDEX IF NOT EXISTS idx_own_kind ON own_items (kind, occurred_at DESC);
+
 CREATE TABLE IF NOT EXISTS digest_runs (
     local_date TEXT PRIMARY KEY,
     status TEXT NOT NULL,
@@ -136,6 +219,233 @@ def freshness_at() -> Optional[str]:
     with _connect() as conn:
         row = conn.execute("SELECT MAX(last_ok_at) AS t FROM news_sources").fetchone()
     return row["t"]
+
+
+# --- Sports ---------------------------------------------------------------------------
+
+_EVENT_COLS = (
+    "id", "league", "home", "away", "home_score", "away_score", "status", "start_at",
+    "home_conference", "away_conference", "home_rank", "away_rank", "poll_date", "url",
+)
+
+
+def upsert_event(event: dict) -> None:
+    row = {c: event.get(c) for c in _EVENT_COLS}
+    cols = ", ".join(_EVENT_COLS)
+    marks = ", ".join(f":{c}" for c in _EVENT_COLS)
+    sets = ", ".join(f"{c} = excluded.{c}" for c in _EVENT_COLS if c != "id")
+    with _connect() as conn:
+        conn.execute(
+            f"INSERT INTO sports_events ({cols}, updated_at) VALUES ({marks}, :now) "
+            f"ON CONFLICT(id) DO UPDATE SET {sets}, updated_at = excluded.updated_at",
+            {**row, "now": _now()},
+        )
+
+
+def list_events(
+    league: Optional[str] = None,
+    team: Optional[str] = None,
+    conference: Optional[str] = None,
+    top_25_only: bool = False,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    limit: int = 200,
+) -> list[dict]:
+    """Filters are ANDed. A conference or Top-25 match on either team keeps the game."""
+    clauses, params = [], []
+    if league:
+        clauses.append("league = ?")
+        params.append(league)
+    if team:
+        clauses.append("(LOWER(home) = LOWER(?) OR LOWER(away) = LOWER(?))")
+        params += [team, team]
+    if conference:
+        clauses.append("(home_conference = ? OR away_conference = ?)")
+        params += [conference, conference]
+    if top_25_only:
+        clauses.append("(home_rank BETWEEN 1 AND 25 OR away_rank BETWEEN 1 AND 25)")
+    if date_from:
+        clauses.append("start_at >= ?")
+        params.append(date_from)
+    if date_to:
+        clauses.append("start_at < ?")
+        params.append(date_to)
+    where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+    with _connect() as conn:
+        rows = conn.execute(
+            f"SELECT * FROM sports_events{where} ORDER BY start_at LIMIT ?", (*params, limit)
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def latest_poll_date() -> Optional[str]:
+    with _connect() as conn:
+        return conn.execute("SELECT MAX(poll_date) AS d FROM sports_events").fetchone()["d"]
+
+
+def record_refresh(table: str, provider: str, error: Optional[str]) -> None:
+    """Freshness is separate from content: a failed refresh keeps `last_ok_at` and old rows."""
+    now = _now()
+    with _connect() as conn:
+        conn.execute(
+            f"INSERT INTO {table} (provider, last_ok_at, last_attempt_at, last_error) "
+            "VALUES (?, ?, ?, ?) ON CONFLICT(provider) DO UPDATE SET "
+            f"last_ok_at = COALESCE(excluded.last_ok_at, {table}.last_ok_at), "
+            "last_attempt_at = excluded.last_attempt_at, last_error = excluded.last_error",
+            (provider, None if error else now, now, error),
+        )
+
+
+def sports_refreshes() -> list[dict]:
+    with _connect() as conn:
+        return [dict(r) for r in conn.execute("SELECT * FROM sports_refreshes")]
+
+
+# --- Shoes ----------------------------------------------------------------------------
+
+MAX_SNAPSHOTS = 60  # bounded price history per listing
+
+
+def create_watch(w: dict) -> int:
+    with _connect() as conn:
+        cur = conn.execute(
+            "INSERT INTO shoe_watches (kind, name, keywords, size, condition, max_price, url, "
+            "created_at) VALUES (:kind, :name, :keywords, :size, :condition, :max_price, :url, "
+            ":now)",
+            {**w, "now": _now()},
+        )
+        return int(cur.lastrowid)
+
+
+def list_watches(include_archived: bool = False) -> list[dict]:
+    where = "" if include_archived else " WHERE archived = 0"
+    with _connect() as conn:
+        return [dict(r) for r in conn.execute(f"SELECT * FROM shoe_watches{where} ORDER BY id")]
+
+
+def archive_watch(watch_id: int) -> bool:
+    with _connect() as conn:
+        return conn.execute(
+            "UPDATE shoe_watches SET archived = 1 WHERE id = ?", (watch_id,)
+        ).rowcount == 1
+
+
+def observe_listing(watch_id: int, listing: dict) -> bool:
+    """Record a sighting; True when it is new or its price changed. Keeps bounded history."""
+    now = _now()
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT id, price FROM shoe_listings WHERE watch_id = ? AND listing_key = ?",
+            (watch_id, listing["key"]),
+        ).fetchone()
+        price = listing.get("price")
+        if row is None:
+            cur = conn.execute(
+                "INSERT INTO shoe_listings (watch_id, listing_key, title, price, condition, "
+                "source, url, observed_at, changed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (watch_id, listing["key"], listing["title"], price, listing.get("condition"),
+                 listing["source"], listing["url"], now, now),
+            )
+            lid, changed = cur.lastrowid, True
+        else:
+            lid, changed = row["id"], row["price"] != price
+            conn.execute(
+                "UPDATE shoe_listings SET title = ?, price = ?, prev_price = CASE WHEN ? "
+                "THEN ? ELSE prev_price END, observed_at = ?, changed_at = CASE WHEN ? "
+                "THEN ? ELSE changed_at END WHERE id = ?",
+                (listing["title"], price, changed, row["price"], now, changed, now, lid),
+            )
+        conn.execute(
+            "INSERT INTO listing_snapshots (listing_id, price, observed_at) VALUES (?, ?, ?)",
+            (lid, price, now),
+        )
+        conn.execute(
+            "DELETE FROM listing_snapshots WHERE listing_id = ? AND id NOT IN ("
+            "SELECT id FROM listing_snapshots WHERE listing_id = ? ORDER BY id DESC LIMIT ?)",
+            (lid, lid, MAX_SNAPSHOTS),
+        )
+    return changed
+
+
+def list_listings(
+    watch_id: Optional[int] = None, changed_since: Optional[str] = None
+) -> list[dict]:
+    clauses, params = [], []
+    if watch_id is not None:
+        clauses.append("l.watch_id = ?")
+        params.append(watch_id)
+    if changed_since:
+        clauses.append("l.changed_at >= ?")
+        params.append(changed_since)
+    clauses.append("w.archived = 0")
+    where = " WHERE " + " AND ".join(clauses)
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT l.*, w.name AS watch_name, (SELECT COUNT(*) FROM listing_snapshots s "
+            "WHERE s.listing_id = l.id) AS sightings FROM shoe_listings l "
+            f"JOIN shoe_watches w ON w.id = l.watch_id{where} ORDER BY l.observed_at DESC",
+            params,
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def price_history(listing_id: int) -> list[dict]:
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT price, observed_at FROM listing_snapshots WHERE listing_id = ? ORDER BY id",
+            (listing_id,),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+# --- Connected accounts and own data ----------------------------------------------------
+
+
+def save_connection(provider: str, token_enc: str) -> None:
+    with _connect() as conn:
+        conn.execute(
+            "INSERT INTO oauth_connections (provider, token_enc, connected_at) VALUES (?, ?, ?) "
+            "ON CONFLICT(provider) DO UPDATE SET token_enc = excluded.token_enc, "
+            "connected_at = excluded.connected_at",
+            (provider, token_enc, _now()),
+        )
+
+
+def get_connection(provider: str) -> Optional[dict]:
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT * FROM oauth_connections WHERE provider = ?", (provider,)
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def delete_connection(provider: str) -> bool:
+    with _connect() as conn:
+        return conn.execute(
+            "DELETE FROM oauth_connections WHERE provider = ?", (provider,)
+        ).rowcount == 1
+
+
+def upsert_own_item(item: dict) -> None:
+    with _connect() as conn:
+        conn.execute(
+            "INSERT INTO own_items (provider, kind, external_id, title, price, url, occurred_at, "
+            "updated_at) VALUES (:provider, :kind, :external_id, :title, :price, :url, "
+            ":occurred_at, :now) ON CONFLICT(provider, kind, external_id) DO UPDATE SET "
+            "title = excluded.title, price = excluded.price, url = excluded.url, "
+            "occurred_at = excluded.occurred_at, updated_at = excluded.updated_at",
+            {**item, "now": _now()},
+        )
+
+
+def list_own_items(kind: Optional[str] = None, limit: int = 200) -> list[dict]:
+    where, params = ("WHERE kind = ?", [kind]) if kind else ("", [])
+    with _connect() as conn:
+        rows = conn.execute(
+            f"SELECT * FROM own_items {where} ORDER BY occurred_at DESC, id DESC LIMIT ?",
+            (*params, limit),
+        ).fetchall()
+    return [dict(r) for r in rows]
 
 
 def get_run(local_date: str) -> Optional[dict]:

@@ -1,4 +1,4 @@
-import type { NewsResponse, NewsState, AutomationStatus, ConfigItem, MetricsHistory, AppLogs, Deployments, HealthHistory, HistoryRange, AgentSummary, CIEvent, DashboardResponse, FinancialSnapshot, Incident, Note, NoteListItem, Portal, RepoActivity, SecondBrainSummary, VaultGraph } from "./types";
+import type { NewShoeWatch, OwnResponse, NewsResponse, ShoesResponse, SportsResponse, NewsState, AutomationStatus, ConfigItem, MetricsHistory, AppLogs, Deployments, HealthHistory, HistoryRange, AgentSummary, CIEvent, DashboardResponse, FinancialSnapshot, Incident, Note, NoteListItem, Portal, RepoActivity, SecondBrainSummary, VaultGraph } from "./types";
 import { readToken, readWriteToken } from "./token";
 
 export class FinancialsAuthError extends Error {}
@@ -198,4 +198,56 @@ export async function setNewsState(itemId: number, state: NewsState, writeToken 
     body: JSON.stringify({ state }),
   });
   if (!response.ok) throw new Error(`Update failed with HTTP ${response.status}.`);
+}
+
+async function getPersonal<T>(path: string, token: string): Promise<T> {
+  const response = await fetch(`/api/v1/personal/${path}`, {
+    headers: { Accept: "application/json", "X-Dashboard-Token": token },
+  });
+  if (response.status === 401) throw new FinancialsAuthError("Invalid dashboard token.");
+  if (!response.ok) throw new Error(`Request failed with HTTP ${response.status}.`);
+  return (await response.json()) as T;
+}
+
+/** Loads the stored snapshot; refreshes upstream first only on an explicit manual refresh. */
+async function fetchRefreshed<T>(path: string, token: string, forceRefresh: boolean): Promise<T> {
+  if (forceRefresh) {
+    // A failed refresh must not hide the last good snapshot.
+    await fetch(`/api/v1/personal/${path}/refresh`, { method: "POST", headers: { "X-Dashboard-Token": token } }).catch(() => undefined);
+  }
+  return getPersonal<T>(path, token);
+}
+
+export const fetchSports = (token: string, forceRefresh = false) => fetchRefreshed<SportsResponse>("sports", token, forceRefresh);
+
+export const fetchShoes = (token: string, forceRefresh = false) => fetchRefreshed<ShoesResponse>("shoes", token, forceRefresh);
+
+export async function createShoeWatch(watch: NewShoeWatch, writeToken = readWriteToken()): Promise<void> {
+  const response = await fetch("/api/v1/personal/shoes/watches", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Dashboard-Write-Token": writeToken },
+    body: JSON.stringify(watch),
+  });
+  if (!response.ok) throw new Error(`Save failed with HTTP ${response.status}.`);
+}
+
+export async function archiveShoeWatch(id: number, writeToken = readWriteToken()): Promise<void> {
+  const response = await fetch(`/api/v1/personal/shoes/watches/${id}`, {
+    method: "DELETE",
+    headers: { "X-Dashboard-Write-Token": writeToken },
+  });
+  if (!response.ok) throw new Error(`Archive failed with HTTP ${response.status}.`);
+}
+
+export const fetchOwn = (token: string, forceRefresh = false) => fetchRefreshed<OwnResponse>("own", token, forceRefresh);
+
+export async function startConnect(provider: string, writeToken = readWriteToken()): Promise<string> {
+  const response = await fetch(`/api/v1/personal/connect/${provider}`, { headers: { "X-Dashboard-Write-Token": writeToken } });
+  if (!response.ok) throw new Error(`Connect failed with HTTP ${response.status}.`);
+  return ((await response.json()) as { url: string }).url;
+}
+
+export async function disconnectProvider(provider: string, writeToken = readWriteToken()): Promise<void> {
+  const response = await fetch(`/api/v1/personal/connections/${provider}`, { method: "DELETE", headers: { "X-Dashboard-Write-Token": writeToken } });
+  if (!response.ok) throw new Error(`Disconnect failed with HTTP ${response.status}.`);
 }

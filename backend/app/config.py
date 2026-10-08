@@ -57,6 +57,20 @@ class Settings(BaseSettings):
 
     # Private news feed and daily-digest runs (read/write-token gated; digest via internal secret).
     personal_db_path: str = "./aisaac_personal.db"
+    # Encrypts stored OAuth refresh tokens and signs connect-flow state. Unset = connecting is off.
+    token_encryption_key: str = ""
+    # Public base URL used to build OAuth redirect URIs (local: http://localhost:8000).
+    public_base_url: str = "http://localhost:8000"
+    # eBay Browse API app credentials (client-credentials flow); unset = no eBay price search.
+    ebay_client_id: str = ""
+    ebay_client_secret: str = ""
+    # eBay user-consent: RuName (used as redirect_uri) and the scope list from Application Keys.
+    ebay_runame: str = ""
+    ebay_user_scopes: str = ""
+    # StockX developer app (Auth0 authorization-code flow) and the x-api-key for API calls.
+    stockx_client_id: str = ""
+    stockx_client_secret: str = ""
+    stockx_api_key: str = ""
 
     # Second-brain vault notes pushed by scripts/second_brain_push.py (read-token gated).
     second_brain_db_path: str = "./aisaac_second_brain.db"

@@ -268,3 +268,93 @@ export interface NewsResponse {
   sources: NewsFeedStatus[];
   freshness_at: string | null;
 }
+
+export type League = "NFL" | "NBA" | "MLB" | "NCAAF" | "NCAAB";
+
+export interface SportsEvent {
+  id: string;
+  league: League;
+  home: string;
+  away: string;
+  home_score: number | null;
+  away_score: number | null;
+  status: string;
+  start_at: string;
+  home_conference: string | null;
+  away_conference: string | null;
+  home_rank: number | null;
+  away_rank: number | null;
+  poll_date: string | null;
+  url: string | null;
+}
+
+export interface SportsResponse {
+  events: SportsEvent[];
+  priority: SportsEvent[];
+  priority_teams: Record<string, League>;
+  official_links: Record<League, string>;
+  rankings: { poll_date: string | null; current: boolean };
+  configured: boolean;
+  freshness_at: string | null;
+  last_error: string | null;
+}
+
+export interface ShoeWatch {
+  id: number;
+  kind: "search" | "release" | "stockx";
+  name: string;
+  keywords: string;
+  size: string | null;
+  condition: string | null;
+  max_price: number | null;
+  url: string | null;
+}
+
+export interface ShoeListing {
+  id: number;
+  watch_id: number;
+  watch_name: string;
+  title: string;
+  price: number | null;
+  prev_price: number | null;
+  condition: string | null;
+  source: string;
+  url: string;
+  observed_at: string;
+  changed_at: string | null;
+  sightings: number;
+  history: { price: number | null; observed_at: string }[];
+}
+
+export interface ShoesResponse {
+  watches: ShoeWatch[];
+  listings: ShoeListing[];
+  configured: boolean;
+  freshness_at: string | null;
+}
+
+export type NewShoeWatch = Omit<ShoeWatch, "id">;
+
+export interface Connection {
+  provider: string;
+  available: boolean;
+  connected: boolean;
+}
+
+export type OwnKind = "purchase" | "watch" | "bid" | "listing" | "sale";
+
+export interface OwnItem {
+  id: number;
+  provider: string;
+  kind: OwnKind;
+  external_id: string;
+  title: string;
+  price: number | null;
+  url: string | null;
+  occurred_at: string | null;
+}
+
+export interface OwnResponse {
+  items: OwnItem[];
+  connections: Connection[];
+}

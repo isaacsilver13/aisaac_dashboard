@@ -1,5 +1,5 @@
 import type { ComponentType, SVGProps } from "react";
-import { AppWindow, Book, Brain, Dashboard, Github, Settings, TaskList, Timer } from "iconoir-react";
+import { AppWindow, Book, Brain, Dashboard, Github, Settings, Shop, TaskList, Timer, Trophy } from "iconoir-react";
 
 export interface NavItem {
   to: string;
@@ -16,7 +16,9 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/applications", label: "Applications", icon: AppWindow, hasApps: true },
   { to: "/github", label: "GitHub", icon: Github },
   { to: "/tasks", label: "Tasks", icon: TaskList },
+  { to: "/sports", label: "Sports", icon: Trophy },
   { to: "/news", label: "News", icon: Book },
+  { to: "/shoes", label: "Shoes", icon: Shop },
   { to: "/automations", label: "Automations", icon: Timer },
   { to: "/knowledge", label: "Knowledge", icon: Brain },
   { to: "/settings", label: "Settings", icon: Settings },
