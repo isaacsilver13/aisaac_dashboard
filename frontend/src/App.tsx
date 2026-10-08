@@ -7,6 +7,8 @@ import Analytics from "./pages/Analytics";
 import CommandCenter from "./pages/CommandCenter";
 import Coms from "./pages/Coms";
 import News from "./pages/News";
+import Shoes from "./pages/Shoes";
+import Sports from "./pages/Sports";
 import SecondBrain from "./pages/SecondBrain";
 import { ApplicationPage, ComingSoon, NotFound, RedirectKeepSearch } from "./pages/stubs";
 import Settings from "./pages/Settings";
@@ -25,7 +27,9 @@ export default function App() {
         <Route path="/github/repositories" element={<Repositories />} />
         <Route path="/github/repositories/:repo" element={<RepositoryDetail />} />
         <Route path="/tasks" element={<Tasks />} />
+        <Route path="/sports" element={<Sports />} />
         <Route path="/news" element={<News />} />
+        <Route path="/shoes" element={<Shoes />} />
         <Route path="/automations" element={<Automations />} />
         <Route path="/knowledge/*" element={<SecondBrain />} />
         <Route path="/settings" element={<Settings />} />

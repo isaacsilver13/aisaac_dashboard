@@ -12,7 +12,7 @@ import httpx
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, Field, ValidationError, model_validator
 
 from . import (
     automations,
@@ -22,9 +22,16 @@ from . import (
     incidents,
     metrics_store,
     notify,
+    personal_connect,
     personal_digest,
+    personal_ebay,
     personal_news,
+    personal_own,
+    personal_shoes,
+    personal_sports,
+    personal_stockx,
     personal_store,
+    personal_vault,
     reports,
     second_brain_store,
 )
@@ -62,6 +69,22 @@ ci_events.configure(settings.ci_events_db_path)
 metrics_store.configure(settings.metrics_db_path)
 second_brain_store.configure(settings.second_brain_db_path)
 personal_store.configure(settings.personal_db_path)
+personal_shoes.PROVIDER = personal_ebay.make_provider(
+    settings.ebay_client_id, settings.ebay_client_secret
+)
+personal_connect.SPECS.update(personal_connect.make_specs(
+    settings.ebay_client_id, settings.ebay_client_secret, settings.ebay_runame,
+    settings.ebay_user_scopes, settings.stockx_client_id, settings.stockx_client_secret,
+))
+_stockx_fetch = personal_stockx.make_fetcher(
+    settings.stockx_client_id, settings.stockx_client_secret, settings.stockx_api_key
+)
+if _stockx_fetch:
+    personal_own.FETCHERS["stockx"] = _stockx_fetch
+personal_shoes.STOCKX_PROVIDER = personal_stockx.make_market_provider(
+    settings.stockx_client_id, settings.stockx_client_secret, settings.stockx_api_key,
+    lambda: personal_vault.load_token("stockx", settings.token_encryption_key),
+)
 health_history.configure(settings.health_db_path, settings.health_retention_days)
 _last_notified_at: dict[str, float] = {}
 monitor = Monitor(cache_ttl_seconds=settings.cache_ttl_seconds, settings=settings)
@@ -356,6 +379,151 @@ def personal_news_state(item_id: int, payload: NewsStateIn) -> None:
         raise HTTPException(404, "Unknown article.")
 
 
+def _refresh_row(provider: str) -> dict:
+    return next((r for r in personal_store.sports_refreshes() if r["provider"] == provider), {})
+
+
+@app.get("/api/v1/personal/sports", dependencies=[Depends(_require_read_token)])
+def personal_sports_list(
+    league: Optional[Literal["NFL", "NBA", "MLB", "NCAAF", "NCAAB"]] = Query(default=None),
+    team: Optional[str] = Query(default=None, max_length=60),
+    conference: Optional[str] = Query(default=None, max_length=60),
+    top_25_only: bool = Query(default=False),
+    date_from: Optional[str] = Query(default=None, max_length=32),
+    date_to: Optional[str] = Query(default=None, max_length=32),
+) -> dict:
+    result = personal_sports.query(league, team, conference, top_25_only, date_from, date_to)
+    now = datetime.now(timezone.utc)
+    refresh = _refresh_row("sports")
+    return {
+        **result,
+        "priority": personal_sports.priority_events(now),
+        "priority_teams": personal_sports.PRIORITY_TEAMS,
+        "official_links": personal_sports.OFFICIAL_LINKS,
+        "configured": personal_sports.PROVIDER is not None,
+        "freshness_at": refresh.get("last_ok_at"),
+        "last_error": refresh.get("last_error"),
+    }
+
+
+@app.post("/api/v1/personal/sports/refresh", dependencies=[Depends(_require_read_token)])
+def personal_sports_refresh() -> dict:
+    return {"result": personal_sports.refresh()}
+
+
+class ShoeWatchIn(BaseModel):
+    kind: Literal["search", "release", "stockx"]
+    name: str = Field(min_length=1, max_length=120)
+    keywords: str = Field(default="", max_length=200)
+    size: Optional[str] = Field(default=None, max_length=20)
+    condition: Optional[str] = Field(default=None, max_length=40)
+    max_price: Optional[float] = Field(default=None, ge=0)
+    url: Optional[str] = Field(default=None, max_length=500, pattern=r"^https?://")
+
+    @model_validator(mode="after")
+    def _stockx_size(self) -> "ShoeWatchIn":
+        if self.kind == "stockx" and self.size not in personal_stockx.SIZES:
+            raise ValueError("StockX watches track size 10 or 10.5 only.")
+        return self
+
+
+@app.get("/api/v1/personal/shoes", dependencies=[Depends(_require_read_token)])
+def personal_shoes_list() -> dict:
+    listings = personal_store.list_listings()
+    return {
+        "watches": personal_store.list_watches(),
+        "listings": [{**x, "history": personal_store.price_history(x["id"])} for x in listings],
+        "configured": bool(personal_shoes.PROVIDER or personal_shoes.STOCKX_PROVIDER),
+        "freshness_at": _refresh_row("shoes").get("last_ok_at"),
+    }
+
+
+@app.post("/api/v1/personal/shoes/refresh", dependencies=[Depends(_require_read_token)])
+def personal_shoes_refresh() -> dict:
+    return {"result": personal_shoes.refresh()}
+
+
+@app.post(
+    "/api/v1/personal/shoes/watches", status_code=201, dependencies=[Depends(_require_write_token)]
+)
+def personal_shoes_create(payload: ShoeWatchIn) -> dict:
+    return {"id": personal_store.create_watch(payload.model_dump())}
+
+
+@app.delete(
+    "/api/v1/personal/shoes/watches/{watch_id}",
+    status_code=204,
+    dependencies=[Depends(_require_write_token)],
+)
+def personal_shoes_archive(watch_id: int) -> None:
+    if not personal_store.archive_watch(watch_id):
+        raise HTTPException(404, "Unknown watch.")
+
+
+def _connection_rows() -> list[dict]:
+    known = set(personal_connect.SPECS) | set(personal_own.FETCHERS)
+    providers = sorted(known | {"ebay", "stockx"})
+    return [
+        {
+            "provider": p,
+            "available": p in personal_connect.SPECS and bool(settings.token_encryption_key),
+            "connected": personal_store.get_connection(p) is not None,
+        }
+        for p in providers
+    ]
+
+
+@app.get("/api/v1/personal/connections", dependencies=[Depends(_require_read_token)])
+def personal_connections() -> dict:
+    return {"connections": _connection_rows()}
+
+
+@app.get("/api/v1/personal/own", dependencies=[Depends(_require_read_token)])
+def personal_own_list(
+    kind: Optional[Literal["purchase", "watch", "bid", "listing", "sale"]] = Query(default=None),
+) -> dict:
+    return {"items": personal_store.list_own_items(kind), "connections": _connection_rows()}
+
+
+@app.post("/api/v1/personal/own/refresh", dependencies=[Depends(_require_read_token)])
+def personal_own_refresh() -> dict:
+    return {"results": personal_own.refresh(settings.token_encryption_key)}
+
+
+@app.get("/api/v1/personal/connect/{provider}", dependencies=[Depends(_require_write_token)])
+def personal_connect_start(provider: str) -> dict:
+    try:
+        url = personal_connect.authorize_link(
+            provider, settings.token_encryption_key, settings.public_base_url
+        )
+    except personal_connect.ConnectError:
+        raise HTTPException(501, "This provider is not configured for connecting.") from None
+    return {"url": url}
+
+
+@app.get("/api/v1/personal/connect/{provider}/callback")
+def personal_connect_callback(provider: str, code: str = "", state: str = "") -> PlainTextResponse:
+    # Called by the browser after the provider redirects back, so it cannot carry a token
+    # header; the signed, short-lived state (issued only to a write-token holder) authorizes it.
+    try:
+        personal_connect.complete(
+            provider, code, state, settings.token_encryption_key, settings.public_base_url
+        )
+    except personal_connect.ConnectError:
+        return PlainTextResponse("Connection failed. Start again from the dashboard.", 400)
+    return PlainTextResponse("Connected. You can close this tab and return to the dashboard.")
+
+
+@app.delete(
+    "/api/v1/personal/connections/{provider}",
+    status_code=204,
+    dependencies=[Depends(_require_write_token)],
+)
+def personal_disconnect(provider: str) -> None:
+    if not personal_store.delete_connection(provider):
+        raise HTTPException(404, "Not connected.")
+
+
 @app.post("/internal/daily-digest/send", dependencies=[Depends(_require_internal_secret)])
 def daily_digest_send(dry_run: bool = Query(default=False)) -> dict:
     return personal_digest.run(
@@ -374,6 +542,9 @@ _CONFIG_CHECKS = (
     ("resend_api_key", "Resend API key", "Email alerts"),
     ("alert_to_email", "Alert recipient", "Email alerts"),
     ("ntfy_topic", "ntfy topic", "CI push notifications"),
+    ("token_encryption_key", "Token encryption key", "Connecting eBay/StockX accounts"),
+    ("ebay_client_id", "eBay client ID", "Shoe price search"),
+    ("ebay_client_secret", "eBay client secret", "Shoe price search"),
     ("portfolio_metrics_token", "Portfolio metrics token", "Portfolio app metrics"),
 )
 

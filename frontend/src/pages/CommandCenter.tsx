@@ -7,6 +7,7 @@ import { ActivityFeed } from "../components/dashboard/ActivityFeed";
 import { AttentionPanel } from "../components/dashboard/AttentionPanel";
 import { FinancialsPanel } from "../components/dashboard/FinancialsPanel";
 import { SecondBrainPanel } from "../components/dashboard/SecondBrainPanel";
+import { TodayPanel } from "../components/dashboard/TodayPanel";
 import { SystemOverview } from "../components/dashboard/SystemOverview";
 import { EmptyState } from "../components/primitives/EmptyState";
 import { ErrorState } from "../components/primitives/ErrorState";
@@ -72,6 +73,7 @@ export default function CommandCenter() {
         </div>
       )}
 
+      <TodayPanel />
       <FinancialsPanel />
       <SecondBrainPanel />
 

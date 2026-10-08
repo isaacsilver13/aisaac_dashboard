@@ -8,7 +8,7 @@ RUN npm run build
 FROM python:3.12-slim
 WORKDIR /app/backend
 COPY backend/pyproject.toml ./
-RUN pip install --no-cache-dir fastapi httpx pydantic-settings "uvicorn[standard]" tzdata pytest ruff
+RUN pip install --no-cache-dir fastapi httpx pydantic-settings "uvicorn[standard]" tzdata "cryptography>=43,<50" pytest ruff
 COPY backend/app ./app
 COPY backend/tests ./tests
 COPY --from=frontend /app/frontend/dist /app/frontend/dist
