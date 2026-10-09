@@ -16,6 +16,7 @@ SINGLE_HOST_APPS = {
     "gym-tracker",
     "portfolio-analysis",
     "aisaac-rocket",
+    "chess",
 }
 
 

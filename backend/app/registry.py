@@ -82,6 +82,14 @@ _REGISTRY: Mapping[str, tuple[AppDefinition, ...]] = {
             product_url="http://127.0.0.1:5177",
             health_url="http://127.0.0.1:8006/api/v1/health",
         ),
+        AppDefinition(
+            id="chess",
+            name="Chess",
+            category="Games",
+            description="Play Stockfish bots with custom skins, post-game review and progress tracking.",
+            product_url="http://127.0.0.1:5173",
+            health_url="http://127.0.0.1:3000/api/health",
+        ),
     ),
     "production": (
         AppDefinition(
@@ -170,6 +178,15 @@ _REGISTRY: Mapping[str, tuple[AppDefinition, ...]] = {
             description="Private personal-finance app: spending, budgets and recurring bills.",
             product_url="https://aisaac-rocket.fly.dev/",
             health_url="https://aisaac-rocket.fly.dev/api/v1/health",
+        ),
+        AppDefinition(
+            id="chess",
+            fly_app="aisaac-chess",
+            name="Chess",
+            category="Games",
+            description="Play Stockfish bots with custom skins, post-game review and progress tracking.",
+            product_url="https://aisaac-chess.fly.dev/",
+            health_url="https://aisaac-chess.fly.dev/api/health",
         ),
     ),
 }
