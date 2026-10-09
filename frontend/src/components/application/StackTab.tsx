@@ -78,6 +78,15 @@ const FLOWS: Record<string, StackFlow> = {
     ],
     monitoring: "Public health check only; no metrics exposed",
   },
+  chess: {
+    description: "A single Fly app serves the board UI and its API; AIsaac probes only the public health endpoint.",
+    nodes: [
+      { label: "Browser", detail: "Board + Stockfish bots" },
+      { label: "Fly · aisaac-chess", detail: "UI + API + SQLite" },
+      { label: "Game history", detail: "Not read by AIsaac" },
+    ],
+    monitoring: "Public health check only; no metrics exposed",
+  },
 };
 
 export function StackTab({ appId }: { appId: string }) {
