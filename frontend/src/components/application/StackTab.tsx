@@ -69,6 +69,15 @@ const FLOWS: Record<string, StackFlow> = {
     ],
     monitoring: "Health, readiness, and scoped aggregate metrics checks",
   },
+  "aisaac-rocket": {
+    description: "A single Fly app serves the finance interface and its API; AIsaac probes only the public health endpoint.",
+    nodes: [
+      { label: "Browser", detail: "Finance interface" },
+      { label: "Fly · aisaac-rocket", detail: "UI + API" },
+      { label: "Private finance data", detail: "Not read by AIsaac" },
+    ],
+    monitoring: "Public health check only; no metrics exposed",
+  },
 };
 
 export function StackTab({ appId }: { appId: string }) {

@@ -74,6 +74,14 @@ _REGISTRY: Mapping[str, tuple[AppDefinition, ...]] = {
             metric_allowlist=PORTFOLIO_METRICS,
             metrics_token_setting="portfolio_metrics_token",
         ),
+        AppDefinition(
+            id="aisaac-rocket",
+            name="AIsaac Rocket",
+            category="Finance",
+            description="Private personal-finance app: spending, budgets and recurring bills.",
+            product_url="http://127.0.0.1:5177",
+            health_url="http://127.0.0.1:8006/api/v1/health",
+        ),
     ),
     "production": (
         AppDefinition(
@@ -153,6 +161,15 @@ _REGISTRY: Mapping[str, tuple[AppDefinition, ...]] = {
             metrics_url="https://portfolio-analysis-api.fly.dev/api/v1/health/metrics",
             metric_allowlist=PORTFOLIO_METRICS,
             metrics_token_setting="portfolio_metrics_token",
+        ),
+        AppDefinition(
+            id="aisaac-rocket",
+            fly_app="aisaac-rocket",
+            name="AIsaac Rocket",
+            category="Finance",
+            description="Private personal-finance app: spending, budgets and recurring bills.",
+            product_url="https://aisaac-rocket.fly.dev/",
+            health_url="https://aisaac-rocket.fly.dev/api/v1/health",
         ),
     ),
 }
