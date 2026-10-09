@@ -10,7 +10,13 @@ RETIRED_HOSTS = {
     "isilver-gym-tracker-web.fly.dev",
     "portfolio-analysis-web.fly.dev",
 }
-SINGLE_HOST_APPS = {"nfl-confidence", "betting-aggregator", "gym-tracker", "portfolio-analysis", "aisaac-rocket"}
+SINGLE_HOST_APPS = {
+    "nfl-confidence",
+    "betting-aggregator",
+    "gym-tracker",
+    "portfolio-analysis",
+    "aisaac-rocket",
+}
 
 
 def _hosts(app) -> dict[str, str]:
